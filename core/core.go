@@ -5,6 +5,7 @@ import (
   "crypto/elliptic"
   "crypto/sha256"
   "crypto/rand"
+  "math/big"
   "hash"
   "fmt"
   "log"
@@ -39,24 +40,29 @@ func KeyGen(curve elliptic.Curve) (*ecdsa.PrivateKey, ecdsa.PublicKey) {
 }
 
 
+func SignMessage(text string, key *ecdsa.PrivateKey) (*big.Int, *big.Int) {
+
+  r, s, err := ecdsa.Sign(rand.Reader, key, Hash(text))
+
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  return r, s
+}
+
+
 func DemoFlow() {
 
   curve := Setup()
 
   key, public := KeyGen(curve)
 
-  // message definition
   var message string
   message = "something"
 
   // sign/verify low level
-  r, s, err := ecdsa.Sign(rand.Reader, key, Hash(message))
-  if err != nil {
-    log.Fatal(err)
-  }
-  sig := r.Bytes()
-  sig = append(sig, s.Bytes()...)
-
+  r, s := SignMessage(message, key)
   var vrf bool
   vrf = ecdsa.Verify(&public, Hash(message), r, s)
 
