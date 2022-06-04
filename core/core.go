@@ -7,7 +7,6 @@ import (
   "crypto/rand"
   "math/big"
   "hash"
-  "fmt"
   "log"
   "io"
 )
@@ -73,24 +72,4 @@ func SignASN1(message string, key *ecdsa.PrivateKey) []byte {
 func VerifySignatureASN1(message string, public *ecdsa.PublicKey, signature []byte) bool {
 
   return ecdsa.VerifyASN1(public, HashText(message), signature)
-}
-
-
-func DemoFlow() {
-
-  curve := Setup()
-  key, public := KeyGen(curve)
-
-  message := "to-be-signed"
-  var verified bool
-
-  // low level version
-  r, s := Sign(message, key)
-  verified = VerifySignature(message, &public, r, s)
-  fmt.Println(verified)
-
-  // ASN.1 version
-  signature := SignASN1(message, key)
-  verified = VerifySignatureASN1(message, &public, signature)
-  fmt.Println(verified)
 }
