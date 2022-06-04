@@ -58,6 +58,18 @@ func VerifySignature(text string, public *ecdsa.PublicKey, r, s *big.Int) bool {
 }
 
 
+func SignMessageASN1(text string, key *ecdsa.PrivateKey) []byte {
+
+  signature, err := ecdsa.SignASN1(rand.Reader, key, Hash(text))
+
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  return signature
+}
+
+
 func DemoFlow() {
 
   curve := Setup()
@@ -69,18 +81,12 @@ func DemoFlow() {
 
   // low level version
   r, s := SignMessage(message, key)
-  vrf := VerifySignature(message, &public, r, s)
+  vrf1 := VerifySignature(message, &public, r, s)
+  fmt.Println(vrf1)
 
   // ASN.1 version
-  sig2, err := ecdsa.SignASN1(rand.Reader, key, Hash(message))
-  if err != nil {
-    log.Fatal(err)
-  }
-
+  signature := SignMessageASN1(message, key)
   var vrf2 bool
-  vrf2 = ecdsa.VerifyASN1(&public, Hash(message), sig2)
-
-  // Displays
-  fmt.Println(vrf)
+  vrf2 = ecdsa.VerifyASN1(&public, Hash(message), signature)
   fmt.Println(vrf2)
 }
