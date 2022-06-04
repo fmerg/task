@@ -13,11 +13,11 @@ import (
 )
 
 
-func Hash(message string) []byte {
+func Hash(text string) []byte {
 
   var h hash.Hash
   h = sha256.New()
-  io.WriteString(h, message)
+  io.WriteString(h, text)
 
   return h.Sum(nil)
 }
@@ -52,6 +52,12 @@ func SignMessage(text string, key *ecdsa.PrivateKey) (*big.Int, *big.Int) {
 }
 
 
+func VerifySignature(text string, public *ecdsa.PublicKey, r, s *big.Int) bool {
+
+  return ecdsa.Verify(public, Hash(text), r, s)
+}
+
+
 func DemoFlow() {
 
   curve := Setup()
@@ -59,14 +65,13 @@ func DemoFlow() {
   key, public := KeyGen(curve)
 
   var message string
-  message = "something"
+  message = "to-be-signed"
 
-  // sign/verify low level
+  // low level version
   r, s := SignMessage(message, key)
-  var vrf bool
-  vrf = ecdsa.Verify(&public, Hash(message), r, s)
+  vrf := VerifySignature(message, &public, r, s)
 
-  // sign/verify ASN.1
+  // ASN.1 version
   sig2, err := ecdsa.SignASN1(rand.Reader, key, Hash(message))
   if err != nil {
     log.Fatal(err)
