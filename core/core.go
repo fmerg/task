@@ -22,6 +22,11 @@ func Hash(message string) []byte {
 }
 
 
+func Setup() elliptic.Curve {
+  return elliptic.P256()
+}
+
+
 func KeyGen(curve elliptic.Curve) (*ecdsa.PrivateKey, ecdsa.PublicKey) {
 
   key, err := ecdsa.GenerateKey(curve, rand.Reader)
@@ -36,14 +41,8 @@ func KeyGen(curve elliptic.Curve) (*ecdsa.PrivateKey, ecdsa.PublicKey) {
 
 func DemoFlow() {
 
-  // setup
-  var curve elliptic.Curve
-  curve = elliptic.P256()
+  curve := Setup()
 
-  // var params *elliptic.CurveParams
-  // params = curve.Params()
-
-  // key generation
   key, public := KeyGen(curve)
 
   // message definition
