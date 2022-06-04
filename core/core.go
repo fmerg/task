@@ -13,18 +13,18 @@ import (
 )
 
 
-func Hash(text string) []byte {
-
-  var h hash.Hash
-  h = sha256.New()
-  io.WriteString(h, text)
-
-  return h.Sum(nil)
+func Setup() elliptic.Curve {
+  return elliptic.P256()
 }
 
 
-func Setup() elliptic.Curve {
-  return elliptic.P256()
+func HashText(message string) []byte {
+
+  var hasher hash.Hash
+  hasher = sha256.New()
+  io.WriteString(hasher, message)
+
+  return hasher.Sum(nil)
 }
 
 
@@ -40,9 +40,9 @@ func KeyGen(curve elliptic.Curve) (*ecdsa.PrivateKey, ecdsa.PublicKey) {
 }
 
 
-func SignMessage(text string, key *ecdsa.PrivateKey) (*big.Int, *big.Int) {
+func Sign(message string, key *ecdsa.PrivateKey) (*big.Int, *big.Int) {
 
-  r, s, err := ecdsa.Sign(rand.Reader, key, Hash(text))
+  r, s, err := ecdsa.Sign(rand.Reader, key, HashText(message))
 
   if err != nil {
     log.Fatal(err)
@@ -52,15 +52,15 @@ func SignMessage(text string, key *ecdsa.PrivateKey) (*big.Int, *big.Int) {
 }
 
 
-func VerifySignature(text string, public *ecdsa.PublicKey, r, s *big.Int) bool {
+func VerifySignature(message string, public *ecdsa.PublicKey, r, s *big.Int) bool {
 
-  return ecdsa.Verify(public, Hash(text), r, s)
+  return ecdsa.Verify(public, HashText(message), r, s)
 }
 
 
-func SignMessageASN1(text string, key *ecdsa.PrivateKey) []byte {
+func SignASN1(message string, key *ecdsa.PrivateKey) []byte {
 
-  signature, err := ecdsa.SignASN1(rand.Reader, key, Hash(text))
+  signature, err := ecdsa.SignASN1(rand.Reader, key, HashText(message))
 
   if err != nil {
     log.Fatal(err)
@@ -70,9 +70,9 @@ func SignMessageASN1(text string, key *ecdsa.PrivateKey) []byte {
 }
 
 
-func VerifySignatureASN1(text string, public *ecdsa.PublicKey, signature []byte) bool {
+func VerifySignatureASN1(message string, public *ecdsa.PublicKey, signature []byte) bool {
 
-  return ecdsa.VerifyASN1(public, Hash(text), signature)
+  return ecdsa.VerifyASN1(public, HashText(message), signature)
 }
 
 
@@ -82,14 +82,15 @@ func DemoFlow() {
   key, public := KeyGen(curve)
 
   message := "to-be-signed"
+  var verified bool
 
   // low level version
-  r, s := SignMessage(message, key)
-  vrf1 := VerifySignature(message, &public, r, s)
-  fmt.Println(vrf1)
+  r, s := Sign(message, key)
+  verified = VerifySignature(message, &public, r, s)
+  fmt.Println(verified)
 
   // ASN.1 version
-  signature := SignMessageASN1(message, key)
-  vrf2 := VerifySignatureASN1(message, &public, signature)
-  fmt.Println(vrf2)
+  signature := SignASN1(message, key)
+  verified = VerifySignatureASN1(message, &public, signature)
+  fmt.Println(verified)
 }
