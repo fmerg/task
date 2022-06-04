@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+  "fmt"
+
+  "core"
+)
 
 func main() {
   fmt.Println("Hello world")
+
+  core.PrintInfo()
 }
