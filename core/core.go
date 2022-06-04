@@ -70,14 +70,18 @@ func SignMessageASN1(text string, key *ecdsa.PrivateKey) []byte {
 }
 
 
+func VerifySignatureASN1(text string, public *ecdsa.PublicKey, signature []byte) bool {
+
+  return ecdsa.VerifyASN1(public, Hash(text), signature)
+}
+
+
 func DemoFlow() {
 
   curve := Setup()
-
   key, public := KeyGen(curve)
 
-  var message string
-  message = "to-be-signed"
+  message := "to-be-signed"
 
   // low level version
   r, s := SignMessage(message, key)
@@ -86,7 +90,6 @@ func DemoFlow() {
 
   // ASN.1 version
   signature := SignMessageASN1(message, key)
-  var vrf2 bool
-  vrf2 = ecdsa.VerifyASN1(&public, Hash(message), signature)
+  vrf2 := VerifySignatureASN1(message, &public, signature)
   fmt.Println(vrf2)
 }
