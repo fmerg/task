@@ -4,5 +4,6 @@ https://eprint.iacr.org/2016/013.pdf
 
 ## Demo
 
-```go
+```bash
+go run .
 ```
