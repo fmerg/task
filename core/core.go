@@ -13,7 +13,14 @@ import (
 
 
 func Setup() elliptic.Curve {
+
   return elliptic.P256()
+}
+
+
+func CryptoParams(curve elliptic.Curve) *elliptic.CurveParams {
+
+  return curve.Params()
 }
 
 

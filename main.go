@@ -9,6 +9,8 @@ import (
 func demoFlow() {
 
   curve := core.Setup()
+  // fmt.Println(core.CryptoParams(curve))
+
   key, public := core.KeyGen(curve)
 
   message := "to-be-signed"
