@@ -30,6 +30,12 @@ func demoFlow() {
   // Paillier enc/dec
   p := big.NewInt(11)
   q := big.NewInt(17)
+
+  paillierKey := core.NewPaillierKey(p, q)
+  fmt.Println(paillierKey)
+  paillierPub := paillierKey.Public()
+  fmt.Println(paillierPub)
+
   N := new(big.Int).Mul(p, q)
   fmt.Println("N:", N)
 

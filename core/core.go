@@ -31,6 +31,56 @@ func randomness(n *big.Int) *big.Int {
 }
 
 
+type PaillierKey struct {
+  p         *big.Int      // p
+  q         *big.Int      // q
+  N         *big.Int      // N
+  onePlusN  *big.Int      // 1 + N
+  M         *big.Int      // N ^ 2
+  totient   *big.Int      // phi(N)
+}
+
+
+type PaillierPub struct {
+  N         *big.Int      // N
+  onePlusN  *big.Int      // 1 + N
+  M         *big.Int      // N * 2
+}
+
+
+func NewPaillierKey(p *big.Int, q *big.Int) *PaillierKey {
+
+  one := big.NewInt(1)
+  two := big.NewInt(2)
+
+  pMinusOne := new(big.Int).Sub(p, one)             // p - 1
+  qMinusOne := new(big.Int).Sub(q, one)             // q - 1
+
+  N := new(big.Int).Mul(p, q)                       // N = pq
+  onePlusN := new(big.Int).Add(N, one)              // 1 + N
+  M := new(big.Int).Exp(N, two, nil)                // N ^ 2
+  totient := new(big.Int).Mul(pMinusOne, qMinusOne) // phi(N) = (p - 1)(q - 1)
+
+  return &PaillierKey {
+    p:        p,
+    q:        q,
+    N:        N,
+    onePlusN: onePlusN,
+    M:        M,
+    totient:  totient,
+  }
+}
+
+
+func (key *PaillierKey) Public() *PaillierPub {
+  return &PaillierPub {
+    N:        key.N,
+    onePlusN: key.onePlusN,
+    M:        key.M,
+  }
+}
+
+
 func Encrypt(N *big.Int, m *big.Int) *big.Int {
 
   one := big.NewInt(1)
