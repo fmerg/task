@@ -9,17 +9,45 @@ import (
   "hash"
   "log"
   "io"
+  "fmt"
 )
 
 
-func randomness(n *big.Int) *big.Int {
-  r, err := rand.Int(rand.Reader, n)
+func randInt(max *big.Int) *big.Int {
+  r, err := rand.Int(rand.Reader, max)
 
   if err != nil {
     log.Fatal(err)
   }
 
   return r
+}
+
+
+// Generate prime numbers p, q = (p - 1)/2 with bitlength(p) >= bitLen
+func GenerateSafePrimes(bitLength int) (*big.Int, *big.Int) {
+  p := new(big.Int)
+
+  count := 0
+  for {
+    fmt.Println(count)
+    count ++
+    q, err := rand.Prime(rand.Reader, bitLength - 1)
+
+    if err != nil {
+      log.Fatal(err)
+    }
+
+    // p = 2 * q + 1 = (q << 1) | 1
+    p.Lsh(q, 1)
+    p.SetBit(p, 0, 1)
+
+    // Miller-Rabin primality test for p failing with probability at most equal
+    // to (1/4) ^ 25
+    if p.ProbablyPrime(25) {
+      return p, q
+    }
+  }
 }
 
 
@@ -74,10 +102,10 @@ func (key *PaillierKey) Public() *PaillierPub {
 
 func (public *PaillierPub) Encrypt(message *big.Int) *big.Int {
 
-  onePlusNToM := new(big.Int).Exp(public.onePlusN, message, nil)  // (1 + N) ^ m
-  rand := new(big.Int).Exp(randomness(public.N), public.N, nil)   // r ^ N
-  aux := new(big.Int).Mul(onePlusNToM, rand)                      // (1 + N) ^ m * r ^ N
-  cipher := new(big.Int).Mod(aux, public.M)                       // (1 + N) ^ m * r ^ N (mod N ^ 2)
+  onePlusNToM := new(big.Int).Exp(public.onePlusN, message, public.M) // (1 + N) ^ m (mod N ^ 2)
+  rand := new(big.Int).Exp(randInt(public.N), public.N, public.M) // r ^ N (mod N ^ 2)
+  aux := new(big.Int).Mul(onePlusNToM, rand)  // (1 + N) ^ m * r ^ N
+  cipher := new(big.Int).Mod(aux, public.M) // (1 + N) ^ m * r ^ N (mod N ^ 2)
 
   return cipher
 }
@@ -86,10 +114,10 @@ func (public *PaillierPub) Encrypt(message *big.Int) *big.Int {
 func (key *PaillierKey) Decrypt(cipher *big.Int) *big.Int {
 
   c_hat := new(big.Int).Exp(cipher, key.totient, key.M) // c^ = c ^ phi(N) (mod N ^ 2)
-  tmp := new(big.Int).Sub(c_hat, big.NewInt(1))         // c^ - 1
-  m_hat := new(big.Int).Div(tmp, key.N)                 // (c^ - 1)/N
-  aux := new(big.Int).Mul(m_hat, key.totientInv)        // (c^ -1)/N * (phi(N) ^ -1 (mod N))
-  result := new(big.Int).Mod(aux, key.N)                // (c^ -1)/N * (phi(N) ^ -1 (mod N))  (mod N)
+  tmp := new(big.Int).Sub(c_hat, big.NewInt(1)) // c^ - 1
+  m_hat := new(big.Int).Div(tmp, key.N) // (c^ - 1) / N
+  aux := new(big.Int).Mul(m_hat, key.totientInv)  // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))
+  result := new(big.Int).Mod(aux, key.N)  // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))  (mod N)
 
   return result
 }
