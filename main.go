@@ -3,6 +3,7 @@ package main
 import (
   "core"
   "fmt"
+  "math/big"
 )
 
 
@@ -25,6 +26,21 @@ func demoFlow() {
   signature := core.SignASN1(message, key)
   verified = core.VerifySignatureASN1(message, &public, signature)
   fmt.Println(verified)
+
+  // Paillier enc/dec
+  p := big.NewInt(11)
+  q := big.NewInt(17)
+  N := new(big.Int).Mul(p, q)
+  fmt.Println("N:", N)
+
+  m := big.NewInt(175)
+  fmt.Println("m:", m)
+
+  c := core.Encrypt(N, m)
+  fmt.Println("c:", c)
+
+  d := core.Decrypt(p, q, c)
+  fmt.Println("d:", d)
 }
 
 
