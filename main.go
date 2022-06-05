@@ -7,7 +7,7 @@ import (
 )
 
 
-func demoFlow() {
+func demoEcdsa() {
 
   curve := core.Setup()
   // fmt.Println(core.CryptoParams(curve))
@@ -26,33 +26,28 @@ func demoFlow() {
   signature := core.SignASN1(message, key)
   verified = core.VerifySignatureASN1(message, &public, signature)
   fmt.Println(verified)
+}
 
-  // Paillier enc/dec
+func demoPaillier() {
+
   p := big.NewInt(11)
   q := big.NewInt(17)
 
-  paillierKey := core.NewPaillierKey(p, q)
-  paillierPub := paillierKey.Public()
+  secret := core.NewPaillierKey(p, q)
+  public := secret.Public()
 
-  fmt.Println(paillierKey)
-  fmt.Println(paillierPub)
+  message := big.NewInt(175)
+  fmt.Println("message:", message)
 
-  N := paillierPub.N
-  fmt.Println("N:", N)
+  cipher := public.Encrypt(message)
+  result := secret.Decrypt(cipher)
 
-  m := big.NewInt(175)
-  fmt.Println("m:", m)
-
-  c := core.Encrypt(paillierPub, m)
-  fmt.Println("c:", c)
-
-  // d := core.Decrypt(p, q, c)
-  d := core.Decrypt(paillierKey, c)
-  fmt.Println("d:", d)
+  fmt.Println("result:", result)
 }
 
 
 func main() {
 
-  demoFlow()
+  demoEcdsa()
+  demoPaillier()
 }

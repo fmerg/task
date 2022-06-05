@@ -27,40 +27,36 @@ type PaillierKey struct {
   p           *big.Int      // p
   q           *big.Int      // q
   N           *big.Int      // N, should be pq
-  onePlusN    *big.Int      // 1 + N
   M           *big.Int      // N ^ 2
+  onePlusN    *big.Int      // 1 + N
   totient     *big.Int      // phi(N)
   totientInv  *big.Int      // phi(N) ^ -1 (mod N)
 }
 
 
 type PaillierPub struct {
-  N         *big.Int      // N
-  onePlusN  *big.Int      // 1 + N
-  M         *big.Int      // N * 2
+  N         *big.Int        // N
+  M         *big.Int        // N * 2
+  onePlusN  *big.Int        // 1 + N
 }
 
 
 func NewPaillierKey(p *big.Int, q *big.Int) *PaillierKey {
 
-  one := big.NewInt(1)
-  two := big.NewInt(2)
-
-  pMinusOne := new(big.Int).Sub(p, one)             // p - 1
-  qMinusOne := new(big.Int).Sub(q, one)             // q - 1
-
-  N := new(big.Int).Mul(p, q)                       // N = pq
-  onePlusN := new(big.Int).Add(N, one)              // 1 + N
-  M := new(big.Int).Exp(N, two, nil)                // N ^ 2
-  totient := new(big.Int).Mul(pMinusOne, qMinusOne) // phi(N) = (p - 1)(q - 1)
-  totientInv := new(big.Int).ModInverse(totient, N) // phi(N) ^ -1 (mod N)
+  N := new(big.Int).Mul(p, q)                         // N = pq
+  M := new(big.Int).Exp(N, big.NewInt(2), nil)        // N ^ 2
+  onePlusN := new(big.Int).Add(N, big.NewInt(1))      // 1 + N
+  pMinusOne := new(big.Int).Sub(p, big.NewInt(1))     // p - 1
+  qMinusOne := new(big.Int).Sub(q, big.NewInt(1))     // q - 1
+  totient := new(big.Int).Mul(pMinusOne, qMinusOne)   // phi(N) = (p - 1)(q - 1)
+  totientInv := new(big.Int).ModInverse(totient, N)   // phi(N) ^ -1 (mod N)
 
   return &PaillierKey {
     p:          p,
     q:          q,
     N:          N,
-    onePlusN:   onePlusN,
     M:          M,
+    onePlusN:   onePlusN,
     totient:    totient,
     totientInv: totientInv,
   }
@@ -70,13 +66,13 @@ func NewPaillierKey(p *big.Int, q *big.Int) *PaillierKey {
 func (key *PaillierKey) Public() *PaillierPub {
   return &PaillierPub {
     N:        key.N,
-    onePlusN: key.onePlusN,
     M:        key.M,
+    onePlusN: key.onePlusN,
   }
 }
 
 
-func Encrypt(public *PaillierPub, message *big.Int) *big.Int {
+func (public *PaillierPub) Encrypt(message *big.Int) *big.Int {
 
   onePlusNToM := new(big.Int).Exp(public.onePlusN, message, nil)  // (1 + N) ^ m
   rand := new(big.Int).Exp(randomness(public.N), public.N, nil)   // r ^ N
@@ -87,15 +83,15 @@ func Encrypt(public *PaillierPub, message *big.Int) *big.Int {
 }
 
 
-func Decrypt(key *PaillierKey, cipher *big.Int) *big.Int {
+func (key *PaillierKey) Decrypt(cipher *big.Int) *big.Int {
 
   c_hat := new(big.Int).Exp(cipher, key.totient, key.M) // c^ = c ^ phi(N) (mod N ^ 2)
   tmp := new(big.Int).Sub(c_hat, big.NewInt(1))         // c^ - 1
   m_hat := new(big.Int).Div(tmp, key.N)                 // (c^ - 1)/N
   aux := new(big.Int).Mul(m_hat, key.totientInv)        // (c^ -1)/N * (phi(N) ^ -1 (mod N))
-  decrypted := new(big.Int).Mod(aux, key.N)             // (c^ -1)/N * (phi(N) ^ -1 (mod N))  (mod N)
+  result := new(big.Int).Mod(aux, key.N)                // (c^ -1)/N * (phi(N) ^ -1 (mod N))  (mod N)
 
-  return decrypted
+  return result
 }
 
 

@@ -16,9 +16,10 @@ func TestEncryptDecrypt(t *testing.T) {
   secret := core.NewPaillierKey(p, q)
   public := secret.Public()
 
-  m := big.NewInt(175)
-  c := core.Encrypt(public, m)
-  d := core.Decrypt(secret, c)
+  message := big.NewInt(175)
 
-  assert.Equal(t, m, d, "Decrypted ciphertext is not original message")
+  cipher := public.Encrypt(message)
+  result := secret.Decrypt(cipher)
+
+  assert.Equal(t, message, result, "Decrypted ciphertext is not original message")
 }
