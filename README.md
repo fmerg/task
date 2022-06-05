@@ -11,3 +11,9 @@ https://pkg.go.dev/crypto/elliptic@go1.18.3
 ```bash
 go run .
 ```
+
+## Tests
+
+```bash
+go test .
+```

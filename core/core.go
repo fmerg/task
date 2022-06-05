@@ -32,6 +32,7 @@ func randomness(n *big.Int) *big.Int {
 
 
 func Encrypt(N *big.Int, m *big.Int) *big.Int {
+
   one := big.NewInt(1)
   two := big.NewInt(2)
 
@@ -50,6 +51,7 @@ func Encrypt(N *big.Int, m *big.Int) *big.Int {
 
 
 func Decrypt(p *big.Int, q *big.Int, c *big.Int) *big.Int {
+
   one := big.NewInt(1)
   two := big.NewInt(2)
 
