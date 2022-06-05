@@ -1,29 +1,30 @@
 package main
 
 import (
-  "core"
   "fmt"
   "math/big"
+  "threshold/curve"
+  "threshold/paillier"
 )
 
 
 func demoEcdsa() {
 
-  curve := core.Setup()
-  key, public := core.KeyGen(curve)
+  _curve := curve.Setup()
+  key, public := curve.KeyGen(_curve)
 
   message := "to-be-signed"
 
   var verified bool
 
   // low level version
-  r, s := core.Sign(message, key)
-  verified = core.VerifySignature(message, &public, r, s)
+  r, s := curve.Sign(message, key)
+  verified = curve.VerifySignature(message, &public, r, s)
   fmt.Println(verified)
 
   // ASN.1 version
-  signature := core.SignASN1(message, key)
-  verified = core.VerifySignatureASN1(message, &public, signature)
+  signature := curve.SignASN1(message, key)
+  verified = curve.VerifySignatureASN1(message, &public, signature)
   fmt.Println(verified)
 }
 
@@ -48,10 +49,10 @@ func demoPaillier() {
     "00054569939347556380967956642459908629165456091047925197006764973541" +
     "29223536758794080599444958718778758463265731608001059144097229148919" +
     "0583394816326909520228507712914572539", 10)
-  // p, _ := core.GenerateSafePrimes(pBitLength)
-  // q, _ := core.GenerateSafePrimes(qBitLength)
+  // p, _ := GenerateSafePrimes(pBitLength)
+  // q, _ := GenerateSafePrimes(qBitLength)
 
-  secret := core.NewPaillierKey(p, q)
+  secret := paillier.NewKey(p, q)
   public := secret.Public()
 
   message := big.NewInt(9876543210)
@@ -65,9 +66,9 @@ func demoPaillier() {
 
 
 func demo() {
-  curve := core.Setup()
-  curve_bitsize := core.CryptoParams(curve).BitSize
-  key, _ := core.KeyGen(curve)
+  _curve := curve.Setup()
+  curve_bitsize := curve.CryptoParams(_curve).BitSize
+  key, _ := curve.KeyGen(_curve)
 
   // TODO: Explain idea with reference to paper
   bitLength := 8 * curve_bitsize
@@ -89,10 +90,10 @@ func demo() {
     "00054569939347556380967956642459908629165456091047925197006764973541" +
     "29223536758794080599444958718778758463265731608001059144097229148919" +
     "0583394816326909520228507712914572539", 10)
-  // p, _ := core.GenerateSafePrimes(pBitLength)
-  // q, _ := core.GenerateSafePrimes(qBitLength)
+  // p, _ := GenerateSafePrimes(pBitLength)
+  // q, _ := GenerateSafePrimes(qBitLength)
 
-  secret := core.NewPaillierKey(p, q)
+  secret := paillier.NewKey(p, q)
   public := secret.Public()
 
   message := key.D
@@ -105,10 +106,8 @@ func demo() {
 }
 
 
-
 func main() {
-
-  // demoEcdsa()
-  // demoPaillier()
+  demoEcdsa()
+  demoPaillier()
   demo()
 }

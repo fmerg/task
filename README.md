@@ -15,5 +15,6 @@ go run .
 ## Tests
 
 ```bash
-go test .
+cd curve && go test
+cd paillier && go test
 ```
