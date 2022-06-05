@@ -28,11 +28,13 @@ type PublicKey struct {
 
 func NewKey(p *big.Int, q *big.Int) *Key {
 
+  one := big.NewInt(1)
+
   N := new(big.Int).Mul(p, q)                         // N = pq
   M := new(big.Int).Exp(N, big.NewInt(2), nil)        // N ^ 2
-  onePlusN := new(big.Int).Add(N, big.NewInt(1))      // 1 + N
-  pMinusOne := new(big.Int).Sub(p, big.NewInt(1))     // p - 1
-  qMinusOne := new(big.Int).Sub(q, big.NewInt(1))     // q - 1
+  onePlusN := new(big.Int).Add(N, one)                // 1 + N
+  pMinusOne := new(big.Int).Sub(p, one)               // p - 1
+  qMinusOne := new(big.Int).Sub(q, one)               // q - 1
   totient := new(big.Int).Mul(pMinusOne, qMinusOne)   // phi(N) = (p - 1)(q - 1)
   totientInv := new(big.Int).ModInverse(totient, N)   // phi(N) ^ -1 (mod N)
 
@@ -61,9 +63,9 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 
   onePlusNToM := new(big.Int).Exp(public.onePlusN, message, public.M) // (1 + N) ^ m (mod N ^ 2)
   rand := new(big.Int).Exp(randInt(public.N), public.N, public.M) // r ^ N (mod N ^ 2)
-  aux := new(big.Int).Mul(onePlusNToM, rand)  // (1 + N) ^ m * r ^ N
-  cipher := new(big.Int).Mod(aux, public.M) // (1 + N) ^ m * r ^ N (mod N ^ 2)
 
+  cipher := new(big.Int).Mul(onePlusNToM, rand) // (1 + N) ^ m * r ^ N
+  cipher = cipher.Mod(cipher, public.M) // (1 + N) ^ m * r ^ N (mod N ^ 2)
   return cipher
 }
 
@@ -73,9 +75,9 @@ func (key *Key) Decrypt(cipher *big.Int) *big.Int {
   c_hat := new(big.Int).Exp(cipher, key.totient, key.M) // c^ = c ^ phi(N) (mod N ^ 2)
   tmp := new(big.Int).Sub(c_hat, big.NewInt(1)) // c^ - 1
   m_hat := new(big.Int).Div(tmp, key.N) // (c^ - 1) / N
-  aux := new(big.Int).Mul(m_hat, key.totientInv)  // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))
-  result := new(big.Int).Mod(aux, key.N)  // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))  (mod N)
 
+  result := new(big.Int).Mul(m_hat, key.totientInv) // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))
+  result = result.Mod(result, key.N)  // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))  (mod N)
   return result
 }
 
