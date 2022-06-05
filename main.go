@@ -32,20 +32,22 @@ func demoFlow() {
   q := big.NewInt(17)
 
   paillierKey := core.NewPaillierKey(p, q)
-  fmt.Println(paillierKey)
   paillierPub := paillierKey.Public()
+
+  fmt.Println(paillierKey)
   fmt.Println(paillierPub)
 
-  N := new(big.Int).Mul(p, q)
+  N := paillierPub.N
   fmt.Println("N:", N)
 
   m := big.NewInt(175)
   fmt.Println("m:", m)
 
-  c := core.Encrypt(N, m)
+  c := core.Encrypt(paillierPub, m)
   fmt.Println("c:", c)
 
-  d := core.Decrypt(p, q, c)
+  // d := core.Decrypt(p, q, c)
+  d := core.Decrypt(paillierKey, c)
   fmt.Println("d:", d)
 }
 

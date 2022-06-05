@@ -12,14 +12,6 @@ import (
 )
 
 
-func EulerPhi(p *big.Int, q *big.Int) *big.Int {
-  one := big.NewInt(1)
-  pMinusOne := new(big.Int).Sub(p, one)
-  qMinusOne := new(big.Int).Sub(q, one)
-  return new(big.Int).Mul(pMinusOne, qMinusOne)
-}
-
-
 func randomness(n *big.Int) *big.Int {
   r, err := rand.Int(rand.Reader, n)
 
@@ -32,12 +24,13 @@ func randomness(n *big.Int) *big.Int {
 
 
 type PaillierKey struct {
-  p         *big.Int      // p
-  q         *big.Int      // q
-  N         *big.Int      // N
-  onePlusN  *big.Int      // 1 + N
-  M         *big.Int      // N ^ 2
-  totient   *big.Int      // phi(N)
+  p           *big.Int      // p
+  q           *big.Int      // q
+  N           *big.Int      // N, should be pq
+  onePlusN    *big.Int      // 1 + N
+  M           *big.Int      // N ^ 2
+  totient     *big.Int      // phi(N)
+  totientInv  *big.Int      // phi(N) ^ -1 (mod N)
 }
 
 
@@ -60,14 +53,16 @@ func NewPaillierKey(p *big.Int, q *big.Int) *PaillierKey {
   onePlusN := new(big.Int).Add(N, one)              // 1 + N
   M := new(big.Int).Exp(N, two, nil)                // N ^ 2
   totient := new(big.Int).Mul(pMinusOne, qMinusOne) // phi(N) = (p - 1)(q - 1)
+  totientInv := new(big.Int).ModInverse(totient, N) // phi(N) ^ -1 (mod N)
 
   return &PaillierKey {
-    p:        p,
-    q:        q,
-    N:        N,
-    onePlusN: onePlusN,
-    M:        M,
-    totient:  totient,
+    p:          p,
+    q:          q,
+    N:          N,
+    onePlusN:   onePlusN,
+    M:          M,
+    totient:    totient,
+    totientInv: totientInv,
   }
 }
 
@@ -81,46 +76,26 @@ func (key *PaillierKey) Public() *PaillierPub {
 }
 
 
-func Encrypt(N *big.Int, m *big.Int) *big.Int {
+func Encrypt(public *PaillierPub, message *big.Int) *big.Int {
 
-  one := big.NewInt(1)
-  two := big.NewInt(2)
+  onePlusNToM := new(big.Int).Exp(public.onePlusN, message, nil)  // (1 + N) ^ m
+  rand := new(big.Int).Exp(randomness(public.N), public.N, nil)   // r ^ N
+  aux := new(big.Int).Mul(onePlusNToM, rand)                      // (1 + N) ^ m * r ^ N
+  cipher := new(big.Int).Mod(aux, public.M)                       // (1 + N) ^ m * r ^ N (mod N ^ 2)
 
-  onePlusN := new(big.Int).Add(N, one)              // 1 + N
-  M := new(big.Int).Exp(N, two, nil)                // N ^ 2
-
-  onePlusNToM := new(big.Int).Exp(onePlusN, m, nil) // (1 + N) ^ m
-
-  r := randomness(N)
-  rToN := new(big.Int).Exp(r, N, nil)         // r ^ N
-
-  aux := new(big.Int).Mul(onePlusNToM, rToN)  // (1 + N) ^ m * r ^ N
-  c := new(big.Int).Mod(aux, M)               // (1 + N) ^ m * r ^ N (mod N ^ 2)
-  return c
+  return cipher
 }
 
 
-func Decrypt(p *big.Int, q *big.Int, c *big.Int) *big.Int {
+func Decrypt(key *PaillierKey, cipher *big.Int) *big.Int {
 
-  one := big.NewInt(1)
-  two := big.NewInt(2)
+  c_hat := new(big.Int).Exp(cipher, key.totient, key.M) // c^ = c ^ phi(N) (mod N ^ 2)
+  tmp := new(big.Int).Sub(c_hat, big.NewInt(1))         // c^ - 1
+  m_hat := new(big.Int).Div(tmp, key.N)                 // (c^ - 1)/N
+  aux := new(big.Int).Mul(m_hat, key.totientInv)        // (c^ -1)/N * (phi(N) ^ -1 (mod N))
+  decrypted := new(big.Int).Mod(aux, key.N)             // (c^ -1)/N * (phi(N) ^ -1 (mod N))  (mod N)
 
-  N := new(big.Int).Mul(p, q)                   // N
-  M := new(big.Int).Exp(N, two, nil)            // N ^ 2
-
-  totient := EulerPhi(p, q)                     // phi(N)
-
-  c_hat := new(big.Int).Exp(c, totient, M)      // c ^ phi(N) (mod N ^ 2)
-
-  tmp := new(big.Int).Sub(c_hat, one)
-  m_hat := new(big.Int).Div(tmp, N)     // (c ^ phi(N) (mod N ^ 2) - 1)/N
-
-  totientInverse := new(big.Int).ModInverse(totient, N) // phi(N) ^ -1 (mod N ^ 2)
-
-  tmp2 := new(big.Int).Mul(m_hat, totientInverse)
-  d := new(big.Int).Mod(tmp2, N)
-
-  return d
+  return decrypted
 }
 
 
