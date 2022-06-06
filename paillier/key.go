@@ -61,21 +61,47 @@ func (key *Key) Public() *PublicKey {
 
 func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
   r := randInt(public.N)
-  rToN := new(big.Int).Exp(r, public.N, public.NTo2) // r ^ N (mod N ^ 2)
-  GammaToM := new(big.Int).Exp(public.Gamma, message, public.NTo2) // (1 + N) ^ m (mod N ^ 2)
-  cipher := new(big.Int).Mul(GammaToM, rToN) // (1 + N) ^ m * r ^ N
-  cipher = cipher.Mod(cipher, public.NTo2) // (1 + N) ^ m * r ^ N (mod N ^ 2)
+
+  // r ^ N (mod N ^ 2)
+  rToN := new(big.Int).Exp(r, public.N, public.NTo2)
+
+  // (1 + N) ^ m (mod N ^ 2)
+  GammaToM := new(big.Int).Exp(public.Gamma, message, public.NTo2)
+
+  // (1 + N) ^ m * r ^ N (mod N ^ 2)
+  cipher := new(big.Int).Mul(GammaToM, rToN)
+  cipher = cipher.Mod(cipher, public.NTo2)
+
   return cipher
+}
+
+func (key *Key) Decrypt(cipher *big.Int) *big.Int {
+
+  // m^ = (c ^ phi(N) (mod N ^ 2) - 1) / N
+  m_hat := new(big.Int).Exp(cipher, key.totient, key.NTo2)
+  m_hat = m_hat.Sub(m_hat, big.NewInt(1))
+  m_hat = m_hat.Div(m_hat, key.N)
+
+  // m^ * (phi(N) ^ -1 (mod N)) (mod N)
+  res := new(big.Int).Mul(m_hat, key.totientInv)
+  res = res.Mod(res, key.N)
+  return res
 }
 
 
 func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*big.Int, *ZKProof) {
   // TODO: Do not replicate encryption
   r := randInt(public.N)
-  rToN := new(big.Int).Exp(r, public.N, public.NTo2) // r ^ N (mod N ^ 2)
-  GammaToM := new(big.Int).Exp(public.Gamma, message, public.NTo2) // (1 + N) ^ m (mod N ^ 2)
-  cipher := new(big.Int).Mul(GammaToM, rToN) // (1 + N) ^ m * r ^ N
-  cipher = cipher.Mod(cipher, public.NTo2) // (1 + N) ^ m * r ^ N (mod N ^ 2)
+
+  // r ^ N (mod N ^ 2)
+  rToN := new(big.Int).Exp(r, public.N, public.NTo2)
+
+  // (1 + N) ^ m (mod N ^ 2)
+  GammaToM := new(big.Int).Exp(public.Gamma, message, public.NTo2)
+
+  // (1 + N) ^ m * r ^ N (mod N ^ 2)
+  cipher := new(big.Int).Mul(GammaToM, rToN)
+  cipher = cipher.Mod(cipher, public.NTo2)
 
   // Generate proof setting
   setting := generateZKSetting()
@@ -118,24 +144,31 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   // e = Hash(g, y, w, z, u1, u2, u3) E Z
   hasher := sha256.New()
   gx, gy := p256.Generator().ToBytes()
-	hasher.Write(gx)
-	hasher.Write(gy)
+  hasher.Write(gx)
+  hasher.Write(gy)
   yx, yy := y.ToBytes()
-	hasher.Write(yx)
-	hasher.Write(yy)
-	hasher.Write(w.Bytes())
-	hasher.Write(z.Bytes())
+  hasher.Write(yx)
+  hasher.Write(yy)
+  hasher.Write(w.Bytes())
+  hasher.Write(z.Bytes())
   u1x, u1y := u1.ToBytes()
-	hasher.Write(u1x)
-	hasher.Write(u1y)
-	hasher.Write(u2.Bytes())
-	hasher.Write(u3.Bytes())
-	e := new(big.Int).SetBytes(hasher.Sum(nil))
+  hasher.Write(u1x)
+  hasher.Write(u1y)
+  hasher.Write(u2.Bytes())
+  hasher.Write(u3.Bytes())
+  e := new(big.Int).SetBytes(hasher.Sum(nil))
 
-  // TODO: Initialize appropriately
-  s1 := big.NewInt(0)
-  s2 := big.NewInt(0)
-  s3 := big.NewInt(0)
+  // s1 = e * eta + alpha
+  s1 := new(big.Int).Mul(e, eta)
+  s1.Add(s1, alpha)
+
+  // s2 = r ^ e * beta (mod N)
+  s2 := new(big.Int).Exp(r, e, public.N)
+  s2.Mul(s2, beta).Mod(s2, public.N)
+
+  // s3 = e * rho + gamma
+  s3 := new(big.Int).Mul(e, rho)
+  s3.Add(s3, gamma)
 
   proof := &ZKProof{
     setting:  setting,
@@ -150,16 +183,4 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   }
 
   return cipher, proof
-}
-
-
-func (key *Key) Decrypt(cipher *big.Int) *big.Int {
-
-  c_hat := new(big.Int).Exp(cipher, key.totient, key.NTo2) // c^ = c ^ phi(N) (mod N ^ 2)
-  tmp := new(big.Int).Sub(c_hat, big.NewInt(1)) // c^ - 1
-  m_hat := new(big.Int).Div(tmp, key.N) // (c^ - 1) / N
-
-  result := new(big.Int).Mul(m_hat, key.totientInv) // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))
-  result = result.Mod(result, key.N)  // ((c^ -1) / N) * (phi(N) ^ -1 (mod N))  (mod N)
-  return result
 }
