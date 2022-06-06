@@ -103,17 +103,17 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   cipher := new(big.Int).Mul(GammaToM, rToN)
   cipher = cipher.Mod(cipher, public.NTo2)
 
-  // Generate proof setting
-  setting := generateZKSetting()
-  NTilde := setting.NTilde
-  h1 := setting.h1
-  h2 := setting.h2
+  // Generate proof ctx
+  ctx := generateZKContext()
+  NTilde := ctx.NTilde
+  h1 := ctx.h1
+  h2 := ctx.h2
 
   // Adapt encryption parameters
   eta := message
   w := cipher
 
-  // Adapt proof setting with respect to q
+  // Adapt proof ctx with respect to q
   q := p256.Order()
   qNTilde := new(big.Int).Mul(q, NTilde) // q * N~
   qTo3 := new(big.Int).Exp(q, big.NewInt(3), nil) // q ^ 3
@@ -171,15 +171,15 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   s3.Add(s3, gamma)
 
   proof := &ZKProof{
-    setting:  setting,
-    z:        z,
-    u1:       u1,
-    u2:       u2,
-    u3:       u3,
-    e:        e,
-    s1:       s1,
-    s2:       s2,
-    s3:       s3,
+    ctx:  ctx,
+    z:    z,
+    u1:   u1,
+    u2:   u2,
+    u3:   u3,
+    e:    e,
+    s1:   s1,
+    s2:   s2,
+    s3:   s3,
   }
 
   return cipher, proof

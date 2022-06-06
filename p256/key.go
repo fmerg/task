@@ -28,6 +28,17 @@ func (pub *EcPublic) ToBytes() ([]byte, []byte) {
 }
 
 
+func (pub *EcPublic) ToPoint() *EcPoint {
+  x := pub._wrapped.X
+  y := pub._wrapped.Y
+
+  return &EcPoint{
+    x: new(big.Int).Set(x),
+    y: new(big.Int).Set(y),
+  }
+}
+
+
 func GenerateKey() *EcKey {
   curve := elliptic.P256()
   priv, err := ecdsa.GenerateKey(curve, rand.Reader)

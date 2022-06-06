@@ -123,7 +123,7 @@ func demoPaillierWithProof() {
 
   y := key.Public()
   cipher, proof := public.EncryptWithProof(message, y)
-  _, err := proof.Verify()
+  _, err := proof.Verify(y, cipher, public)
   if err != nil {
     log.Fatal(err)  // TODO: Handle
   }
