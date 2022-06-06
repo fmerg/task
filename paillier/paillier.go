@@ -1,8 +1,11 @@
 package paillier
 
 import (
+  "crypto/rsa"
+  "crypto/rand"
   "math/big"
   "fmt"
+  "log"
 )
 
 
@@ -73,8 +76,48 @@ func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof)
   rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
   fmt.Println(rToN)
 
-
   cipher := big.NewInt(0)
+
+  // Proof setting --------------------
+
+  rsa_key, err := rsa.GenerateKey(rand.Reader, 2048)
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  NTilde := rsa_key.N // N~
+
+  // TODO: Is this correct??
+  h1, err := rand.Int(rand.Reader, NTilde)
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  h2, err := rand.Int(rand.Reader, NTilde)
+  if err != nil {
+    log.Fatal(err)
+  }
+  fmt.Println(h1)
+  fmt.Println(h2)
+
+  // ----------------------------------
+
+  q := big.NewInt(7)  // TODO: pass this somehow
+  qNTilde := new(big.Int).Mul(q, NTilde) // q * N~
+  qTo3 := new(big.Int).Exp(q, big.NewInt(3), nil) // q ^ 3
+  qTo3NTilde := new(big.Int).Mul(qTo3, NTilde) // q ^ 3 * N~
+
+  one := big.NewInt(1)
+
+  alpha := randInRange(one, qTo3)
+  beta := randInRange(one, public.N)
+  rho := randInRange(one, qNTilde)
+  gamma := randInRange(one, qTo3NTilde)
+
+  fmt.Println(alpha)
+  fmt.Println(beta)
+  fmt.Println(rho)
+  fmt.Println(gamma)
 
   z := big.NewInt(0)
   u1 := big.NewInt(0)

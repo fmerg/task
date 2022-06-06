@@ -155,6 +155,6 @@ func demoPaillierWithProof() {
 func main() {
   // demoEcdsa()
   // demoPaillier()
-  demoPaillierFromCurve()
-  // demoPaillierWithProof()
+  // demoPaillierFromCurve()
+  demoPaillierWithProof()
 }
