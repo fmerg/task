@@ -1,11 +1,8 @@
 package paillier
 
 import (
-  "crypto/rsa"
-  "crypto/rand"
   "math/big"
   "fmt"
-  "log"
 )
 
 
@@ -27,7 +24,7 @@ type PublicKey struct {
 }
 
 
-func NewKey(p *big.Int, q *big.Int) *Key {
+func GenerateKey(p *big.Int, q *big.Int) *Key {
 
   one := big.NewInt(1)
 
@@ -78,29 +75,18 @@ func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof)
 
   cipher := big.NewInt(0)
 
-  // Proof setting --------------------
+  // Generate proof setting
 
-  rsa_key, err := rsa.GenerateKey(rand.Reader, 2048)
-  if err != nil {
-    log.Fatal(err)
-  }
+  setting := generateZKSetting()
 
-  NTilde := rsa_key.N // N~
+  NTilde := setting.NTilde
+  h1 := setting.h1
+  h2 := setting.h2
 
-  // TODO: Is this correct??
-  h1, err := rand.Int(rand.Reader, NTilde)
-  if err != nil {
-    log.Fatal(err)
-  }
-
-  h2, err := rand.Int(rand.Reader, NTilde)
-  if err != nil {
-    log.Fatal(err)
-  }
   fmt.Println(h1)
   fmt.Println(h2)
 
-  // ----------------------------------
+  // Generate random parameters
 
   q := big.NewInt(7)  // TODO: pass this somehow
   qNTilde := new(big.Int).Mul(q, NTilde) // q * N~
@@ -119,6 +105,7 @@ func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof)
   fmt.Println(rho)
   fmt.Println(gamma)
 
+  // TODO: Initialize appropriately
   z := big.NewInt(0)
   u1 := big.NewInt(0)
   u2 := big.NewInt(0)
@@ -129,14 +116,15 @@ func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof)
   s3 := big.NewInt(0)
 
   proof := &ZKProof{
-    z:  z,
-    u1: u1,
-    u2: u2,
-    u3: u3,
-    e:  e,
-    s1: s1,
-    s2: s2,
-    s3: s3,
+    setting:  setting,
+    z:        z,
+    u1:       u1,
+    u2:       u2,
+    u3:       u3,
+    e:        e,
+    s1:       s1,
+    s2:       s2,
+    s3:       s3,
   }
 
   return cipher, proof

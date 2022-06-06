@@ -24,7 +24,7 @@ func TestEncryptDecrypt(t *testing.T) {
     "29223536758794080599444958718778758463265731608001059144097229148919" +
     "0583394816326909520228507712914572539", 10)
 
-  secret := NewKey(p, q)
+  secret := GenerateKey(p, q)
   public := secret.Public()
 
   message := big.NewInt(9876543210)

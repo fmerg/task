@@ -53,7 +53,7 @@ func demoPaillier() {
   // p, _ := GenerateSafePrimes(pBitLength)
   // q, _ := GenerateSafePrimes(qBitLength)
 
-  secret := paillier.NewKey(p, q)
+  secret := paillier.GenerateKey(p, q)
   public := secret.Public()
 
   message := big.NewInt(9876543210)
@@ -94,7 +94,7 @@ func demoPaillierFromCurve() {
   // p, _ := GenerateSafePrimes(pBitLength)
   // q, _ := GenerateSafePrimes(qBitLength)
 
-  secret := paillier.NewKey(p, q)
+  secret := paillier.GenerateKey(p, q)
   public := secret.Public()
 
   message := key.D
@@ -135,7 +135,7 @@ func demoPaillierWithProof() {
   // p, _ := GenerateSafePrimes(pBitLength)
   // q, _ := GenerateSafePrimes(qBitLength)
 
-  secret := paillier.NewKey(p, q)
+  secret := paillier.GenerateKey(p, q)
   public := secret.Public()
 
   message := key.D

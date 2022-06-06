@@ -3,6 +3,7 @@ package paillier
 
 import (
   "crypto/rand"
+  "crypto/rsa"
   "math/big"
   "log"
   "fmt"
@@ -60,4 +61,15 @@ func GenerateSafePrimes(bitLength int) (*big.Int, *big.Int) {
       return p, q
     }
   }
+}
+
+// TODO: Explain what we need this for
+func generateRSA(bitlength int) *rsa.PrivateKey {
+  key, err := rsa.GenerateKey(rand.Reader, 2048)
+
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  return key
 }
