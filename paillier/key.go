@@ -13,7 +13,7 @@ type Key struct {
   P           *big.Int      // P
   Q           *big.Int      // Q
   N           *big.Int      // N, should be PQ
-  M           *big.Int      // N ^ 2
+  NTo2        *big.Int      // N ^ 2
   Gamma       *big.Int      // 1 + N
   totient     *big.Int      // phi(N)
   totientInv  *big.Int      // phi(N) ^ -1 (mod N)
@@ -22,7 +22,7 @@ type Key struct {
 
 type PublicKey struct {
   N     *big.Int            // N
-  M     *big.Int            // N ^ 2
+  NTo2  *big.Int            // N ^ 2
   Gamma *big.Int            // 1 + N
 }
 
@@ -32,7 +32,7 @@ func GenerateKey(P *big.Int, Q *big.Int) *Key {
   one := big.NewInt(1)
 
   N := new(big.Int).Mul(P, Q)                         // N = PQ
-  M := new(big.Int).Exp(N, big.NewInt(2), nil)        // N ^ 2
+  NTo2 := new(big.Int).Exp(N, big.NewInt(2), nil)     // N ^ 2
   Gamma := new(big.Int).Add(N, one)                   // 1 + N
   pMinusOne := new(big.Int).Sub(P, one)               // P - 1
   qMinusOne := new(big.Int).Sub(Q, one)               // Q - 1
@@ -43,7 +43,7 @@ func GenerateKey(P *big.Int, Q *big.Int) *Key {
     P:          P,
     Q:          Q,
     N:          N,
-    M:          M,
+    NTo2:       NTo2,
     Gamma:      Gamma,
     totient:    totient,
     totientInv: totientInv,
@@ -54,7 +54,7 @@ func GenerateKey(P *big.Int, Q *big.Int) *Key {
 func (key *Key) Public() *PublicKey {
   return &PublicKey {
     N:      key.N,
-    M:      key.M,
+    NTo2:   key.NTo2,
     Gamma:  key.Gamma,
   }
 }
@@ -62,10 +62,10 @@ func (key *Key) Public() *PublicKey {
 
 func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
   r := randInt(public.N)
-  rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
-  GammaToM := new(big.Int).Exp(public.Gamma, message, public.M) // (1 + N) ^ m (mod N ^ 2)
+  rToN := new(big.Int).Exp(r, public.N, public.NTo2) // r ^ N (mod N ^ 2)
+  GammaToM := new(big.Int).Exp(public.Gamma, message, public.NTo2) // (1 + N) ^ m (mod N ^ 2)
   cipher := new(big.Int).Mul(GammaToM, rToN) // (1 + N) ^ m * r ^ N
-  cipher = cipher.Mod(cipher, public.M) // (1 + N) ^ m * r ^ N (mod N ^ 2)
+  cipher = cipher.Mod(cipher, public.NTo2) // (1 + N) ^ m * r ^ N (mod N ^ 2)
   return cipher
 }
 
@@ -73,7 +73,7 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*big.Int, *ZKProof) {
   // TODO: Implement
   r := randInt(public.N)
-  rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
+  rToN := new(big.Int).Exp(r, public.N, public.NTo2) // r ^ N (mod N ^ 2)
   fmt.Println(rToN)
 
   cipher := big.NewInt(0)
@@ -108,11 +108,13 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   z.Mul(z, new(big.Int).Exp(h2, rho, NTilde)).Mod(z, NTilde)
 
   // u1 = a * g E G
-  // u1 := big.NewInt(0)
   u1 := p256.ScalarTimesGen(alpha)
 
+  // u2 = Gamma ^ a * beta * N (mod N ^ 2)
+  u2 := new(big.Int).Exp(public.Gamma, alpha, public.NTo2)
+  u2.Mul(u2, new(big.Int).Exp(beta, public.N, public.NTo2)).Mod(u2, public.NTo2)
+
   // TODO: Initialize appropriately
-  u2 := big.NewInt(0)
   u3 := big.NewInt(0)
   e := big.NewInt(0)
   s1 := big.NewInt(0)
@@ -137,7 +139,7 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
 
 func (key *Key) Decrypt(cipher *big.Int) *big.Int {
 
-  c_hat := new(big.Int).Exp(cipher, key.totient, key.M) // c^ = c ^ phi(N) (mod N ^ 2)
+  c_hat := new(big.Int).Exp(cipher, key.totient, key.NTo2) // c^ = c ^ phi(N) (mod N ^ 2)
   tmp := new(big.Int).Sub(c_hat, big.NewInt(1)) // c^ - 1
   m_hat := new(big.Int).Div(tmp, key.N) // (c^ - 1) / N
 
