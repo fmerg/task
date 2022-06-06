@@ -114,8 +114,11 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   u2 := new(big.Int).Exp(public.Gamma, alpha, public.NTo2)
   u2.Mul(u2, new(big.Int).Exp(beta, public.N, public.NTo2)).Mod(u2, public.NTo2)
 
+  // u3 = h1 ^ a * h2 * gamma (mod N~)
+  u3 := new(big.Int).Exp(h1, alpha, NTilde)
+  u3.Mul(u3, new(big.Int).Exp(h2, gamma, NTilde)).Mod(u3, NTilde)
+
   // TODO: Initialize appropriately
-  u3 := big.NewInt(0)
   e := big.NewInt(0)
   s1 := big.NewInt(0)
   s2 := big.NewInt(0)
