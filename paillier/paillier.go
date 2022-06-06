@@ -1,6 +1,7 @@
 package paillier
 
 import (
+  "crypto/ecdsa"
   "math/big"
   "fmt"
 )
@@ -67,7 +68,7 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 }
 
 
-func (public *PublicKey) EncryptWithProof(message *big.Int, q *big.Int) (*big.Int, *ZKProof) {
+func (public *PublicKey) EncryptWithProof(message *big.Int, q *big.Int, y *ecdsa.PublicKey) (*big.Int, *ZKProof) {
   // TODO: Implement
   r := randInt(public.N)
   rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)

@@ -4,7 +4,7 @@ import (
   "math/big"
   // "crypto/rand"
   // "log"
-  // "fmt"
+  "fmt"
 )
 
 
@@ -60,5 +60,6 @@ func (proof *ZKProof) Verify() (bool, error) {
   // fmt.Println(h1)
   // fmt.Println(h2)
 
-  return true, nil
+  err := fmt.Errorf("Proof failed to verify")
+  return false, err
 }

@@ -108,7 +108,7 @@ func demoPaillierFromCurve() {
 func demoPaillierWithProof() {
   _curve := curve.Setup()
   curve_bitsize := curve.CryptoParams(_curve).BitSize
-  key, _ := curve.KeyGen(_curve)
+  key, y := curve.KeyGen(_curve)
 
   // TODO: Explain idea with reference to paper
   bitLength := 8 * curve_bitsize
@@ -130,7 +130,7 @@ func demoPaillierWithProof() {
 
   q := curve.CryptoParams(_curve).P
 
-  cipher, proof := public.EncryptWithProof(message, q)
+  cipher, proof := public.EncryptWithProof(message, q, &y)
   _, err := proof.Verify()
   if err != nil {
     log.Fatal(err)  // TODO: Handle
