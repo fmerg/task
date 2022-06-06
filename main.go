@@ -73,12 +73,10 @@ func demoPaillier() {
 
 
 func demoPaillierFromCurve() {
-  curve := p256.Curve()
   key := p256.GenerateKey()
 
   // TODO: Explain idea with reference to paper
-  curve_bitsize := curve.Params().BitSize
-  bitLength := 8 * curve_bitsize
+  bitLength := 8 * p256.BitSize()
   PBitLength := (bitLength + 1) / 2
   QBitLength := bitLength - PBitLength
 
@@ -103,12 +101,10 @@ func demoPaillierFromCurve() {
 
 
 func demoPaillierWithProof() {
-  curve := p256.Curve()
-  curve_bitsize := curve.Params().BitSize
   key := p256.GenerateKey()
 
   // TODO: Explain idea with reference to paper
-  bitLength := 8 * curve_bitsize
+  bitLength := 8 * p256.BitSize()
   PBitLength := (bitLength + 1) / 2
   QBitLength := bitLength - PBitLength
 
@@ -126,7 +122,7 @@ func demoPaillierWithProof() {
   fmt.Println("message:", message)
 
   y := key.Public()
-  cipher, proof := public.EncryptWithProof(message, curve, y)
+  cipher, proof := public.EncryptWithProof(message, y)
   _, err := proof.Verify()
   if err != nil {
     log.Fatal(err)  // TODO: Handle
@@ -138,8 +134,8 @@ func demoPaillierWithProof() {
 
 
 func main() {
-  demoEcdsa()
-  // demoPaillier()
-  // demoPaillierFromCurve()
-  // demoPaillierWithProof()
+  // demoEcdsa()
+  demoPaillier()
+  demoPaillierFromCurve()
+  demoPaillierWithProof()
 }

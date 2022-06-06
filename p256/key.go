@@ -9,11 +9,6 @@ import (
 )
 
 
-func Curve() elliptic.Curve {
-  return elliptic.P256()
-}
-
-
 type EcKey struct {
   priv  *ecdsa.PrivateKey
   pub   *ecdsa.PublicKey
@@ -90,3 +85,6 @@ func VerifySignatureASN1(message string, signature []byte, public *EcPublic) boo
 
   return ecdsa.VerifyASN1(public.value, hashText(message), signature)
 }
+
+// -------------------------------------------------
+

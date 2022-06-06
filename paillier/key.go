@@ -1,7 +1,7 @@
 package paillier
 
 import (
-  "crypto/elliptic"
+  // "crypto/elliptic"
   // "crypto/ecdsa"
   "threshold/p256"
   "math/big"
@@ -70,7 +70,7 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 }
 
 
-func (public *PublicKey) EncryptWithProof(message *big.Int, _curve elliptic.Curve, y *p256.EcPublic) (*big.Int, *ZKProof) {
+func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*big.Int, *ZKProof) {
   // TODO: Implement
   r := randInt(public.N)
   rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
@@ -89,7 +89,7 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, _curve elliptic.Curv
   eta := message  // secret key to encrypt
 
   // Adapt proof setting with respect to q
-  q := _curve.Params().P
+  q := p256.Order()
   qNTilde := new(big.Int).Mul(q, NTilde) // q * N~
   qTo3 := new(big.Int).Exp(q, big.NewInt(3), nil) // q ^ 3
   qTo3NTilde := new(big.Int).Mul(qTo3, NTilde) // q ^ 3 * N~
@@ -107,8 +107,9 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, _curve elliptic.Curv
   z := new(big.Int).Exp(h1, eta, NTilde)
   z.Mul(z, new(big.Int).Exp(h2, rho, NTilde)).Mod(z, NTilde)
 
-  // u1 = g ^ a E G
-  u1 := big.NewInt(0)
+  // u1 = a * g E G
+  // u1 := big.NewInt(0)
+  u1 := p256.ScalarTimesGen(alpha)
 
   // TODO: Initialize appropriately
   u2 := big.NewInt(0)

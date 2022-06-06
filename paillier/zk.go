@@ -2,6 +2,7 @@ package paillier
 
 import (
   "math/big"
+  "threshold/p256"
   // "crypto/rand"
   // "log"
   "fmt"
@@ -11,7 +12,7 @@ import (
 type ZKProof struct {
   setting *ZKSetting
   z       *big.Int
-  u1      *big.Int
+  u1      *p256.Point
   u2      *big.Int
   u3      *big.Int
   e       *big.Int
