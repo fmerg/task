@@ -128,7 +128,9 @@ func demoPaillierWithProof() {
   message := key.D
   fmt.Println("message:", message)
 
-  cipher, proof := public.EncryptWithProof(message)
+  q := curve.CryptoParams(_curve).P
+
+  cipher, proof := public.EncryptWithProof(message, q)
   _, err := proof.Verify()
   if err != nil {
     log.Fatal(err)  // TODO: Handle

@@ -67,7 +67,7 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 }
 
 
-func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof) {
+func (public *PublicKey) EncryptWithProof(message *big.Int, q *big.Int) (*big.Int, *ZKProof) {
   // TODO: Implement
   r := randInt(public.N)
   rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
@@ -76,7 +76,6 @@ func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof)
   cipher := big.NewInt(0)
 
   // Generate proof setting
-
   setting := generateZKSetting()
 
   NTilde := setting.NTilde
@@ -86,15 +85,13 @@ func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof)
   fmt.Println(h1)
   fmt.Println(h2)
 
-  // Generate random parameters
-
-  q := big.NewInt(7)  // TODO: pass this somehow
+  // Adapt proof setting with respect to q
   qNTilde := new(big.Int).Mul(q, NTilde) // q * N~
   qTo3 := new(big.Int).Exp(q, big.NewInt(3), nil) // q ^ 3
   qTo3NTilde := new(big.Int).Mul(qTo3, NTilde) // q ^ 3 * N~
 
+  // Generate random parameters
   one := big.NewInt(1)
-
   alpha := randInRange(one, qTo3)
   beta := randInRange(one, public.N)  // TODO: Justify
   rho := randInRange(one, qNTilde)
