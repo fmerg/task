@@ -20,6 +20,22 @@ func randInt(max *big.Int) *big.Int {
 }
 
 
+func randInRange(min *big.Int, max *big.Int) *big.Int {
+	if min.Cmp(max) >= 0 {
+    log.Fatal("max is < min")
+	}
+
+  r, err := rand.Int(rand.Reader, new(big.Int).Sub(max, min))
+
+  if err != nil {
+    log.Fatal(err)
+  }
+
+	r.Add(r, min)
+	return r
+}
+
+
 // Generate prime numbers p, q = (p - 1)/2 with bitlength(p) >= bitLen
 func GenerateSafePrimes(bitLength int) (*big.Int, *big.Int) {
   p := new(big.Int)
