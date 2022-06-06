@@ -33,6 +33,13 @@ type Point struct {
 }
 
 
+// Return coordinates in big endian
+func (pt *Point) ToBytes() ([]byte, []byte) {
+
+  return pt.x.Bytes(), pt.y.Bytes()
+}
+
+
 // Group generator g
 func Generator() *Point {
   params := Curve().Params()

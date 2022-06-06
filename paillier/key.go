@@ -1,11 +1,10 @@
 package paillier
 
 import (
-  // "crypto/elliptic"
-  // "crypto/ecdsa"
+  "crypto/sha256"
   "threshold/p256"
   "math/big"
-  "fmt"
+  // "fmt"
 )
 
 
@@ -71,22 +70,22 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 
 
 func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*big.Int, *ZKProof) {
-  // TODO: Implement
+  // TODO: Do not replicate encryption
   r := randInt(public.N)
   rToN := new(big.Int).Exp(r, public.N, public.NTo2) // r ^ N (mod N ^ 2)
-  fmt.Println(rToN)
-
-  cipher := big.NewInt(0)
+  GammaToM := new(big.Int).Exp(public.Gamma, message, public.NTo2) // (1 + N) ^ m (mod N ^ 2)
+  cipher := new(big.Int).Mul(GammaToM, rToN) // (1 + N) ^ m * r ^ N
+  cipher = cipher.Mod(cipher, public.NTo2) // (1 + N) ^ m * r ^ N (mod N ^ 2)
 
   // Generate proof setting
   setting := generateZKSetting()
-
   NTilde := setting.NTilde
   h1 := setting.h1
   h2 := setting.h2
 
   // Adapt encryption parameters
-  eta := message  // secret key to encrypt
+  eta := message
+  w := cipher
 
   // Adapt proof setting with respect to q
   q := p256.Order()
@@ -100,8 +99,6 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   beta := randInRange(one, public.N)  // TODO: Justify
   rho := randInRange(one, qNTilde)
   gamma := randInRange(one, qTo3NTilde)
-
-  fmt.Println(alpha, beta, gamma)
 
   // z = h1 ^ eta * h2 ^ rho (mod N~)
   z := new(big.Int).Exp(h1, eta, NTilde)
@@ -118,8 +115,24 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   u3 := new(big.Int).Exp(h1, alpha, NTilde)
   u3.Mul(u3, new(big.Int).Exp(h2, gamma, NTilde)).Mod(u3, NTilde)
 
+  // e = Hash(g, y, w, z, u1, u2, u3) E Z
+  hasher := sha256.New()
+  gx, gy := p256.Generator().ToBytes()
+	hasher.Write(gx)
+	hasher.Write(gy)
+  yx, yy := y.ToBytes()
+	hasher.Write(yx)
+	hasher.Write(yy)
+	hasher.Write(w.Bytes())
+	hasher.Write(z.Bytes())
+  u1x, u1y := u1.ToBytes()
+	hasher.Write(u1x)
+	hasher.Write(u1y)
+	hasher.Write(u2.Bytes())
+	hasher.Write(u3.Bytes())
+	e := new(big.Int).SetBytes(hasher.Sum(nil))
+
   // TODO: Initialize appropriately
-  e := big.NewInt(0)
   s1 := big.NewInt(0)
   s2 := big.NewInt(0)
   s3 := big.NewInt(0)

@@ -16,7 +16,15 @@ type EcKey struct {
 
 
 type EcPublic struct {
-  value   *ecdsa.PublicKey
+  _wrapped *ecdsa.PublicKey
+}
+
+
+func (pub *EcPublic) ToBytes() ([]byte, []byte) {
+  x := pub._wrapped.X
+  y := pub._wrapped.Y
+
+  return x.Bytes(), y.Bytes()
 }
 
 
@@ -46,7 +54,7 @@ func (key *EcKey) Value() *big.Int {
 func (key *EcKey) Public() *EcPublic {
 
   return &EcPublic {
-    value: key.pub,
+    _wrapped: key.pub,
   }
 }
 
@@ -77,14 +85,11 @@ func (key *EcKey) SignASN1(message string) []byte {
 
 func VerifySignature(message string, r *big.Int, s *big.Int, public *EcPublic) bool {
 
-  return ecdsa.Verify(public.value, hashText(message), r, s)
+  return ecdsa.Verify(public._wrapped, hashText(message), r, s)
 }
 
 
 func VerifySignatureASN1(message string, signature []byte, public *EcPublic) bool {
 
-  return ecdsa.VerifyASN1(public.value, hashText(message), signature)
+  return ecdsa.VerifyASN1(public._wrapped, hashText(message), signature)
 }
-
-// -------------------------------------------------
-
