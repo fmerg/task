@@ -43,7 +43,7 @@ func generateZKSetting () *ZKSetting {
 
 func (proof *ZKProof) Verify() (bool, error) {
 
-  // Extract proof parameters
+  // Extract proof parameters (TODO: define and use helper)
   NTilde := proof.setting.NTilde
   h1 := proof.setting.h1
   h2 := proof.setting.h2

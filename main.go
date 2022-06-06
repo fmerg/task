@@ -4,7 +4,7 @@ import (
   "fmt"
   "log"
   "math/big"
-  "threshold/curve"
+  "threshold/p256"
   "threshold/paillier"
 )
 
@@ -30,27 +30,24 @@ func getPrimes256() (*big.Int, *big.Int) {
 
 
 func demoEcdsa() {
-
-  _curve := curve.Setup()
-  key, public := curve.KeyGen(_curve)
+  key := p256.GenerateKey()
+  public := key.Public()
 
   message := "to-be-signed"
-
   var verified bool
 
   // low level version
-  r, s := curve.Sign(message, key)
-  verified = curve.VerifySignature(message, &public, r, s)
+  r, s := key.Sign(message)
+  verified = p256.VerifySignature(message, r, s, public)
   fmt.Println(verified)
 
   // ASN.1 version
-  signature := curve.SignASN1(message, key)
-  verified = curve.VerifySignatureASN1(message, &public, signature)
+  signature := key.SignASN1(message)
+  verified = p256.VerifySignatureASN1(message, signature, public)
   fmt.Println(verified)
 }
 
 func demoPaillier() {
-
   bitLength := 8 * 256
   PBitLength := (bitLength + 1) / 2
   QBitLength := bitLength - PBitLength
@@ -76,11 +73,11 @@ func demoPaillier() {
 
 
 func demoPaillierFromCurve() {
-  _curve := curve.Setup()
-  curve_bitsize := curve.CryptoParams(_curve).BitSize
-  key, _ := curve.KeyGen(_curve)
+  curve := p256.Curve()
+  key := p256.GenerateKey()
 
   // TODO: Explain idea with reference to paper
+  curve_bitsize := curve.Params().BitSize
   bitLength := 8 * curve_bitsize
   PBitLength := (bitLength + 1) / 2
   QBitLength := bitLength - PBitLength
@@ -95,7 +92,7 @@ func demoPaillierFromCurve() {
   secret := paillier.GenerateKey(P, Q)
   public := secret.Public()
 
-  message := key.D
+  message := key.Value()
   fmt.Println("message:", message)
 
   cipher := public.Encrypt(message)
@@ -106,9 +103,9 @@ func demoPaillierFromCurve() {
 
 
 func demoPaillierWithProof() {
-  _curve := curve.Setup()
-  curve_bitsize := curve.CryptoParams(_curve).BitSize
-  key, y := curve.KeyGen(_curve)
+  curve := p256.Curve()
+  curve_bitsize := curve.Params().BitSize
+  key := p256.GenerateKey()
 
   // TODO: Explain idea with reference to paper
   bitLength := 8 * curve_bitsize
@@ -125,12 +122,11 @@ func demoPaillierWithProof() {
   secret := paillier.GenerateKey(P, Q)
   public := secret.Public()
 
-  message := key.D
+  message := key.Value()
   fmt.Println("message:", message)
 
-  q := curve.CryptoParams(_curve).P
-
-  cipher, proof := public.EncryptWithProof(message, q, &y)
+  y := key.Public()
+  cipher, proof := public.EncryptWithProof(message, curve, y)
   _, err := proof.Verify()
   if err != nil {
     log.Fatal(err)  // TODO: Handle
@@ -142,8 +138,8 @@ func demoPaillierWithProof() {
 
 
 func main() {
-  // demoEcdsa()
+  demoEcdsa()
   // demoPaillier()
   // demoPaillierFromCurve()
-  demoPaillierWithProof()
+  // demoPaillierWithProof()
 }

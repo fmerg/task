@@ -1,7 +1,9 @@
 package paillier
 
 import (
-  "crypto/ecdsa"
+  "crypto/elliptic"
+  // "crypto/ecdsa"
+  "threshold/p256"
   "math/big"
   "fmt"
 )
@@ -68,7 +70,7 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 }
 
 
-func (public *PublicKey) EncryptWithProof(message *big.Int, q *big.Int, y *ecdsa.PublicKey) (*big.Int, *ZKProof) {
+func (public *PublicKey) EncryptWithProof(message *big.Int, _curve elliptic.Curve, y *p256.EcPublic) (*big.Int, *ZKProof) {
   // TODO: Implement
   r := randInt(public.N)
   rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
@@ -83,10 +85,11 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, q *big.Int, y *ecdsa
   h1 := setting.h1
   h2 := setting.h2
 
-  fmt.Println(h1)
-  fmt.Println(h2)
+  // Adapt encryption parameters
+  eta := message  // secret key to encrypt
 
   // Adapt proof setting with respect to q
+  q := _curve.Params().P
   qNTilde := new(big.Int).Mul(q, NTilde) // q * N~
   qTo3 := new(big.Int).Exp(q, big.NewInt(3), nil) // q ^ 3
   qTo3NTilde := new(big.Int).Mul(qTo3, NTilde) // q ^ 3 * N~
@@ -98,14 +101,16 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, q *big.Int, y *ecdsa
   rho := randInRange(one, qNTilde)
   gamma := randInRange(one, qTo3NTilde)
 
-  fmt.Println(alpha)
-  fmt.Println(beta)
-  fmt.Println(rho)
-  fmt.Println(gamma)
+  fmt.Println(alpha, beta, gamma)
+
+  // z = h1 ^ eta * h2 ^ rho (mod N~)
+  z := new(big.Int).Exp(h1, eta, NTilde)
+  z.Mul(z, new(big.Int).Exp(h2, rho, NTilde)).Mod(z, NTilde)
+
+  // u1 = g ^ a E G
+  u1 := big.NewInt(0)
 
   // TODO: Initialize appropriately
-  z := big.NewInt(0)
-  u1 := big.NewInt(0)
   u2 := big.NewInt(0)
   u3 := big.NewInt(0)
   e := big.NewInt(0)
