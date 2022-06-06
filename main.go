@@ -108,13 +108,17 @@ func demoPaillierFromCurve() {
 
 
 func demoPaillierWithProof() {
+  _curve := curve.Setup()
+  curve_bitsize := curve.CryptoParams(_curve).BitSize
+  key, _ := curve.KeyGen(_curve)
 
-  bitLength := 8 * 256
+  // TODO: Explain idea with reference to paper
+  bitLength := 8 * curve_bitsize
   pBitLength := (bitLength + 1) / 2
   qBitLength := bitLength - pBitLength
 
-  fmt.Println(pBitLength)
   fmt.Println(qBitLength)
+  fmt.Println(pBitLength)
 
   p, _ := new(big.Int).SetString(
     "17163161634662520191235013397610303324426988881329810102377024009423" +
@@ -134,7 +138,7 @@ func demoPaillierWithProof() {
   secret := paillier.NewKey(p, q)
   public := secret.Public()
 
-  message := big.NewInt(9876543210)
+  message := key.D
   fmt.Println("message:", message)
 
   cipher, proof := public.EncryptWithProof(message)
@@ -151,6 +155,6 @@ func demoPaillierWithProof() {
 func main() {
   // demoEcdsa()
   // demoPaillier()
-  // demoPaillierFromCurve()
-  demoPaillierWithProof()
+  demoPaillierFromCurve()
+  // demoPaillierWithProof()
 }

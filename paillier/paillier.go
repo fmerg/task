@@ -13,16 +13,16 @@ type Key struct {
   q           *big.Int      // q
   N           *big.Int      // N, should be pq
   M           *big.Int      // N ^ 2
-  onePlusN    *big.Int      // 1 + N
+  Gamma       *big.Int      // 1 + N
   totient     *big.Int      // phi(N)
   totientInv  *big.Int      // phi(N) ^ -1 (mod N)
 }
 
 
 type PublicKey struct {
-  N         *big.Int        // N
-  M         *big.Int        // N * 2
-  onePlusN  *big.Int        // 1 + N
+  N     *big.Int            // N
+  M     *big.Int            // N ^ 2
+  Gamma *big.Int            // 1 + N
 }
 
 
@@ -32,7 +32,7 @@ func NewKey(p *big.Int, q *big.Int) *Key {
 
   N := new(big.Int).Mul(p, q)                         // N = pq
   M := new(big.Int).Exp(N, big.NewInt(2), nil)        // N ^ 2
-  onePlusN := new(big.Int).Add(N, one)                // 1 + N
+  Gamma := new(big.Int).Add(N, one)                   // 1 + N
   pMinusOne := new(big.Int).Sub(p, one)               // p - 1
   qMinusOne := new(big.Int).Sub(q, one)               // q - 1
   totient := new(big.Int).Mul(pMinusOne, qMinusOne)   // phi(N) = (p - 1)(q - 1)
@@ -43,7 +43,7 @@ func NewKey(p *big.Int, q *big.Int) *Key {
     q:          q,
     N:          N,
     M:          M,
-    onePlusN:   onePlusN,
+    Gamma:      Gamma,
     totient:    totient,
     totientInv: totientInv,
   }
@@ -52,19 +52,18 @@ func NewKey(p *big.Int, q *big.Int) *Key {
 
 func (key *Key) Public() *PublicKey {
   return &PublicKey {
-    N:        key.N,
-    M:        key.M,
-    onePlusN: key.onePlusN,
+    N:      key.N,
+    M:      key.M,
+    Gamma:  key.Gamma,
   }
 }
 
 
 func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
-
-  onePlusNToM := new(big.Int).Exp(public.onePlusN, message, public.M) // (1 + N) ^ m (mod N ^ 2)
-  rand := new(big.Int).Exp(randInt(public.N), public.N, public.M) // r ^ N (mod N ^ 2)
-
-  cipher := new(big.Int).Mul(onePlusNToM, rand) // (1 + N) ^ m * r ^ N
+  r := randInt(public.N)
+  rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
+  GammaToM := new(big.Int).Exp(public.Gamma, message, public.M) // (1 + N) ^ m (mod N ^ 2)
+  cipher := new(big.Int).Mul(GammaToM, rToN) // (1 + N) ^ m * r ^ N
   cipher = cipher.Mod(cipher, public.M) // (1 + N) ^ m * r ^ N (mod N ^ 2)
   return cipher
 }
@@ -72,8 +71,32 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 
 func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof) {
   // TODO: Implement
+  r := randInt(public.N)
+  rToN := new(big.Int).Exp(r, public.N, public.M) // r ^ N (mod N ^ 2)
+  fmt.Println(rToN)
+
+
   cipher := big.NewInt(0)
-  proof := &ZKProof{}
+
+  z := big.NewInt(0)
+  u1 := big.NewInt(0)
+  u2 := big.NewInt(0)
+  u3 := big.NewInt(0)
+  e := big.NewInt(0)
+  s1 := big.NewInt(0)
+  s2 := big.NewInt(0)
+  s3 := big.NewInt(0)
+
+  proof := &ZKProof{
+    z:  z,
+    u1: u1,
+    u2: u2,
+    u3: u3,
+    e:  e,
+    s1: s1,
+    s2: s2,
+    s3: s3,
+  }
 
   return cipher, proof
 }
