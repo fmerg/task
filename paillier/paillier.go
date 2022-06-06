@@ -70,6 +70,15 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
 }
 
 
+func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof) {
+  // TODO: Implement
+  cipher := big.NewInt(0)
+  proof := &ZKProof{}
+
+  return cipher, proof
+}
+
+
 func (key *Key) Decrypt(cipher *big.Int) *big.Int {
 
   c_hat := new(big.Int).Exp(cipher, key.totient, key.M) // c^ = c ^ phi(N) (mod N ^ 2)
@@ -107,7 +116,7 @@ func GenerateSafePrimes(bitLength int) (*big.Int, *big.Int) {
       log.Fatal(err)
     }
 
-    // p = 2 * q + 1 = (q << 1) | 1
+    // p = 2 * q + 1 = (q << 1) ^ 1
     p.Lsh(q, 1)
     p.SetBit(p, 0, 1)
 
