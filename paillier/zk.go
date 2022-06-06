@@ -41,24 +41,24 @@ func generateZKSetting () *ZKSetting {
 }
 
 
-func (proof *ZKProof) extractSetting() (*big.Int, *big.Int, *big.Int) {
-  setting := proof.setting
-
-  NTilde := setting.NTilde
-  h1 := setting.h1
-  h2 := setting.h2
-
-  return NTilde, h1, h2
-}
-
-
 func (proof *ZKProof) Verify() (bool, error) {
-  // TODO: Implement
 
-  // NTilde, h1, h2 := proof.extractSetting()
-  // fmt.Println(NTilde)
-  // fmt.Println(h1)
-  // fmt.Println(h2)
+  // Extract proof parameters
+  NTilde := proof.setting.NTilde
+  h1 := proof.setting.h1
+  h2 := proof.setting.h2
+  z := proof.z
+  u1 := proof.u1
+  u2 := proof.u2
+  u3 := proof.u3
+  e := proof.e
+  s1 := proof.s1
+  s2 := proof.s2
+  s3 := proof.s3
+
+  fmt.Println(NTilde, h1, h2, z, u1, u2, u3, e, s1, s2, s3)
+
+  // TODO: Do checks
 
   err := fmt.Errorf("Proof failed to verify")
   return false, err
