@@ -7,9 +7,9 @@ import (
 
 
 type Key struct {
-  p           *big.Int      // p
-  q           *big.Int      // q
-  N           *big.Int      // N, should be pq
+  P           *big.Int      // P
+  Q           *big.Int      // Q
+  N           *big.Int      // N, should be PQ
   M           *big.Int      // N ^ 2
   Gamma       *big.Int      // 1 + N
   totient     *big.Int      // phi(N)
@@ -24,21 +24,21 @@ type PublicKey struct {
 }
 
 
-func GenerateKey(p *big.Int, q *big.Int) *Key {
+func GenerateKey(P *big.Int, Q *big.Int) *Key {
 
   one := big.NewInt(1)
 
-  N := new(big.Int).Mul(p, q)                         // N = pq
+  N := new(big.Int).Mul(P, Q)                         // N = PQ
   M := new(big.Int).Exp(N, big.NewInt(2), nil)        // N ^ 2
   Gamma := new(big.Int).Add(N, one)                   // 1 + N
-  pMinusOne := new(big.Int).Sub(p, one)               // p - 1
-  qMinusOne := new(big.Int).Sub(q, one)               // q - 1
-  totient := new(big.Int).Mul(pMinusOne, qMinusOne)   // phi(N) = (p - 1)(q - 1)
+  pMinusOne := new(big.Int).Sub(P, one)               // P - 1
+  qMinusOne := new(big.Int).Sub(Q, one)               // Q - 1
+  totient := new(big.Int).Mul(pMinusOne, qMinusOne)   // phi(N) = (P - 1)(Q - 1)
   totientInv := new(big.Int).ModInverse(totient, N)   // phi(N) ^ -1 (mod N)
 
   return &Key {
-    p:          p,
-    q:          q,
+    P:          P,
+    Q:          Q,
     N:          N,
     M:          M,
     Gamma:      Gamma,
@@ -96,7 +96,7 @@ func (public *PublicKey) EncryptWithProof(message *big.Int) (*big.Int, *ZKProof)
   one := big.NewInt(1)
 
   alpha := randInRange(one, qTo3)
-  beta := randInRange(one, public.N)
+  beta := randInRange(one, public.N)  // TODO: Justify
   rho := randInRange(one, qNTilde)
   gamma := randInRange(one, qTo3NTilde)
 
