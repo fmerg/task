@@ -48,7 +48,6 @@ func demoEncDec() {
 
 func EncDecEcKey() {
   x := p256.GenerateKey()
-  y := x.Public()
   // // TODO: Explain idea with reference to paper
   // bitLength := 8 * p256.BitSize()
   // PBitLength := (bitLength + 1) / 2
@@ -60,7 +59,7 @@ func EncDecEcKey() {
   public := key.Public()
   fmt.Println("message:", x.Value())
   cipher, proof := public.EncryptEcKey(x)
-  result, err := key.DecryptEcKey(y, cipher, proof)
+  result, err := key.DecryptEcKey(cipher, proof)
   if err != nil {
     log.Fatal(err)
   }

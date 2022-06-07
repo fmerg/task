@@ -10,6 +10,7 @@ import (
 
 type ZKProof struct {
   ctx *ZKContext
+  y   *p256.EcPublic
   z   *big.Int
   u1  *p256.EcPoint
   u2  *big.Int
@@ -41,12 +42,13 @@ func generateZKContext () *ZKContext {
 }
 
 
-func (proof *ZKProof) Verify(y *p256.EcPublic, w *big.Int, public *PublicKey) (bool, error) {
+func (proof *ZKProof) Verify(w *big.Int, public *PublicKey) (bool, error) {
 
   // Extract proof parameters (TODO: define and use helper)
   NTilde := proof.ctx.NTilde
   h1 := proof.ctx.h1
   h2 := proof.ctx.h2
+  y := proof.y
   z := proof.z
   u1 := proof.u1
   u2 := proof.u2

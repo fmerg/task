@@ -42,14 +42,13 @@ func TestEncryptDecrypt(t *testing.T) {
 
 func TestEncryptDecryptEcKey(t *testing.T) {
   x := p256.GenerateKey()
-  y := x.Public()
   // P, _ := paillier.GenerateSafePrimes(PBitLength)
   // Q, _ := paillier.GenerateSafePrimes(QBitLength)
   P, Q := getPrimes256()
   key := GenerateKey(P, Q)
   public := key.Public()
   cipher, proof := public.EncryptEcKey(x)
-  result, err := key.DecryptEcKey(y, cipher, proof)
+  result, err := key.DecryptEcKey(cipher, proof)
   assert.Equal(t, err, nil, "Proof should have verified")
   assert.Equal(t, result, x.Value(), "Decrpted ciphertext is not the awaited key")
 }

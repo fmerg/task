@@ -111,6 +111,7 @@ func (public *PublicKey) EncryptEcKey(x *p256.EcKey) (*big.Int, *ZKProof) {
   h2 := ctx.h2
 
   // Align with paper notation
+  y := x.Public()
   eta := x.Value()
   w := cipher
 
@@ -147,7 +148,6 @@ func (public *PublicKey) EncryptEcKey(x *p256.EcKey) (*big.Int, *ZKProof) {
   gx, gy := p256.Generator().ToBytes()
   hasher.Write(gx)
   hasher.Write(gy)
-  y := x.Public()
   yx, yy := y.ToBytes()
   hasher.Write(yx)
   hasher.Write(yy)
@@ -174,6 +174,7 @@ func (public *PublicKey) EncryptEcKey(x *p256.EcKey) (*big.Int, *ZKProof) {
 
   proof := &ZKProof{
     ctx:  ctx,
+    y:    y,
     z:    z,
     u1:   u1,
     u2:   u2,
@@ -188,9 +189,9 @@ func (public *PublicKey) EncryptEcKey(x *p256.EcKey) (*big.Int, *ZKProof) {
 }
 
 
-func (key *Key) DecryptEcKey(y *p256.EcPublic, cipher *big.Int, proof *ZKProof) (*big.Int, error) {
+func (key *Key) DecryptEcKey(cipher *big.Int, proof *ZKProof) (*big.Int, error) {
 
-  _, err := proof.Verify(y, cipher, key.Public())
+  _, err := proof.Verify(cipher, key.Public())
 
   if err != nil {
     err := fmt.Errorf("Decryption aborted: Proof failed to verify")
