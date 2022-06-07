@@ -4,7 +4,6 @@ import (
   "math/big"
   "threshold/p256"
   "crypto/sha256"
-  // "log"
   "fmt"
 )
 
@@ -57,54 +56,46 @@ func (proof *ZKProof) Verify(y *p256.EcPublic, w *big.Int, public *PublicKey) (b
   s2 := proof.s2
   s3 := proof.s3
 
-  fmt.Println(NTilde, h1, h2, z, u1, u2, u3, e, s1, s2, s3)
+  // s1 * g == u1 + e * y ?
+  lu1 := p256.Zero().BaseMult(s1)
+  ru1 := p256.Zero().Add(u1, p256.Zero().Mult(e, y.ToPoint()))
+  u1check := lu1.IsEqual(ru1)
 
-  // TODO: Do checks
+  // Gamma ^ s1 * s2 ^ N == u2 * w ^ e (mod N ^ 2) ?
+  lu2 := new(big.Int).Exp(public.Gamma, s1, public.NTo2)
+  lu2.Mul(lu2, new(big.Int).Exp(s2, public.N, public.NTo2)).Mod(lu2, public.NTo2)
+  ru2 := new(big.Int).Mul(u2, new(big.Int).Exp(w, e, public.NTo2))
+  ru2.Mod(ru2, public.NTo2)
+  u2check := lu2.Cmp(ru2) == 0
 
-  // s1 * g - e * y   TODO
-  _u1 := p256.ScalarTimesGen(s1).Add(y.ToPoint().Neg().ScalarMult(e))
-  fmt.Println(_u1)
-  fmt.Println(u1)
+  // h1 ^ s1 * h2 ^ s3 == u3 * z ^ e (mod N~) ?
+  lu3 := new(big.Int).Exp(h1, s1, NTilde)
+  lu3.Mul(lu3, new(big.Int).Exp(h2, s3, NTilde)).Mod(lu3, NTilde)
+  ru3 := new(big.Int).Mul(u3, new(big.Int).Exp(z, e, NTilde))
+  ru3.Mod(ru3, NTilde)
+  u3check := lu3.Cmp(ru3) == 0
 
-  // -----------------------
-  // u2 = Gamma ^ s1 * s2 ^ N * w ^ -e (mod N ^ 2)
-  _u2 := new(big.Int).Exp(public.Gamma, s1, public.NTo2)
-  _u2.Mul(_u2, new(big.Int).Exp(s2, public.N, public.NTo2).Mod(_u2, public.NTo2))
-  _u2.Mul(_u2, new(big.Int).ModInverse(new(big.Int).Exp(w, e, public.NTo2), public.NTo2)).Mod(_u2, public.NTo2)
-  fmt.Println(_u2)
-  fmt.Println(u2)
-  // -----------------------
-
-  // // -----------------------
-  // // u3 = h1 ^ s1 * h2 ^ s3 * z ^ -e (mod N ^ 2)
-  // _u3 := new(big.Int).Exp(h1, s1, public.NTo2)
-  // _u3 = _u3.Mul(_u3, new(big.Int).Exp(h2, s3, public.NTo2)).Mod(_u3, public.NTo2)
-  // _u3.Mul(_u3, new(big.Int).Exp(w, new(big.Int).ModInverse(e, public.NTo2), public.NTo2)).Mod(_u3, public.NTo2)
-  // fmt.Println(_u3)
-  // fmt.Println(u3)
-  // // -----------------------
-
-  // // ------------------------
-  // // e = Hash(g, y, w, z, u1, u2, u3) E Z
+  // e = Hash(g, y, w, z, u1, u2, u3) E Z
   hasher := sha256.New()
-  hasher.Reset()
-  // gx, gy := p256.Generator().ToBytes()
-  // hasher.Write(gx)
-  // hasher.Write(gy)
-  // yx, yy := y.ToBytes()
-  // hasher.Write(yx)
-  // hasher.Write(yy)
-  // hasher.Write(w.Bytes())
-  // hasher.Write(z.Bytes())
-  // u1x, u1y := u1.ToBytes()
-  // hasher.Write(u1x)
-  // hasher.Write(u1y)
-  // hasher.Write(u2.Bytes())
-  // hasher.Write(u3.Bytes())
-  // _e := new(big.Int).SetBytes(hasher.Sum(nil))
-  // fmt.Println(_e)
-  // fmt.Println(e)
-  // // ------------------------
+  gx, gy := p256.Generator().ToBytes()
+  hasher.Write(gx)
+  hasher.Write(gy)
+  yx, yy := y.ToBytes()
+  hasher.Write(yx)
+  hasher.Write(yy)
+  hasher.Write(w.Bytes())
+  hasher.Write(z.Bytes())
+  u1x, u1y := u1.ToBytes()
+  hasher.Write(u1x)
+  hasher.Write(u1y)
+  hasher.Write(u2.Bytes())
+  hasher.Write(u3.Bytes())
+  d := new(big.Int).SetBytes(hasher.Sum(nil))
+  echeck := e.Cmp(d) == 0
+
+  if (u1check && u2check && u3check && echeck) {
+    return true, nil
+  }
 
   err := fmt.Errorf("Proof failed to verify")
   return false, err

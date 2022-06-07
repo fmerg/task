@@ -103,13 +103,13 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   cipher := new(big.Int).Mul(GammaToM, rToN)
   cipher = cipher.Mod(cipher, public.NTo2)
 
-  // Generate proof ctx
+  // Generate proof context
   ctx := generateZKContext()
   NTilde := ctx.NTilde
   h1 := ctx.h1
   h2 := ctx.h2
 
-  // Adapt encryption parameters
+  // Align encryption I/O with paper notation
   eta := message
   w := cipher
 
@@ -130,8 +130,8 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   z := new(big.Int).Exp(h1, eta, NTilde)
   z.Mul(z, new(big.Int).Exp(h2, rho, NTilde)).Mod(z, NTilde)
 
-  // u1 = a * g E G
-  u1 := p256.ScalarTimesGen(alpha)
+  // u1 = a * g
+  u1 := p256.Zero().BaseMult(alpha)
 
   // u2 = Gamma ^ a * beta * N (mod N ^ 2)
   u2 := new(big.Int).Exp(public.Gamma, alpha, public.NTo2)
@@ -141,7 +141,7 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   u3 := new(big.Int).Exp(h1, alpha, NTilde)
   u3.Mul(u3, new(big.Int).Exp(h2, gamma, NTilde)).Mod(u3, NTilde)
 
-  // e = Hash(g, y, w, z, u1, u2, u3) E Z
+  // e = Hash(g, y, w, z, u1, u2, u3)
   hasher := sha256.New()
   gx, gy := p256.Generator().ToBytes()
   hasher.Write(gx)

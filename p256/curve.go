@@ -6,23 +6,17 @@ import (
 )
 
 
-func Curve() elliptic.Curve {
-
-  return elliptic.P256()
-}
-
-
-// order of underlying field
+// Order of underlying field
 func Order() *big.Int {
 
-  return Curve().Params().P
+  return elliptic.P256().Params().P
 }
 
 
-// bit size of underlying field
+// Bit size of underlying field
 func BitSize() int {
 
-  return Curve().Params().BitSize
+  return elliptic.P256().Params().BitSize
 }
 
 
@@ -33,52 +27,19 @@ type EcPoint struct {
 }
 
 
-// Return coordinates in big endian
-func (pt *EcPoint) ToBytes() ([]byte, []byte) {
-
-  return pt.x.Bytes(), pt.y.Bytes()
-}
-
-
-// Return negative with respect to the group's zero element
-func (pt *EcPoint) Neg() *EcPoint {
+// Returns the zero point of the curve
+func Zero() *EcPoint {
 
   return &EcPoint {
-    x: new(big.Int).Set(pt.x),
-    y: new(big.Int).Neg(pt.y),
+    x: big.NewInt(0),
+    y: big.NewInt(0),
   }
 }
 
 
-// Return sum of points
-func (pt *EcPoint) Add(other *EcPoint) *EcPoint {
-  x, y := Curve().Add(pt.x, pt.y, other.x, other.y)
-
-  return &EcPoint {
-    x: x,
-    y: y,
-  }
-}
-
-
-// Return scalar multiplication
-func (pt *EcPoint) ScalarMult(a *big.Int) *EcPoint {
-  x, y := Curve().ScalarMult(pt.x, pt.y, a.Bytes())
-
-  if a.Cmp(big.NewInt(0)) < 0 {
-    y.Neg(y)
-  }
-
-  return &EcPoint {
-    x: x,
-    y: y,
-  }
-}
-
-
-// Group generator g
+// Returns the curve group generator
 func Generator() *EcPoint {
-  params := Curve().Params()
+  params := elliptic.P256().Params()
 
   return &EcPoint{
     x: new(big.Int).Set(params.Gx),
@@ -87,14 +48,52 @@ func Generator() *EcPoint {
 }
 
 
-// Given a saclar a, return a * g
-func ScalarTimesGen(a *big.Int) *EcPoint {
-  g := Generator()
+// Return coordinates in big endian
+func (p *EcPoint) ToBytes() ([]byte, []byte) {
 
-  x, y := Curve().ScalarMult(g.x, g.y, a.Bytes())
+  return p.x.Bytes(), p.y.Bytes()
+}
 
-  return &EcPoint {
-    x: new(big.Int).Set(x),
-    y: new(big.Int).Set(y),
+
+// Returns true iff the points are equal componentwise
+func (p *EcPoint) IsEqual(p1 *EcPoint) bool {
+
+  return (p.x.Cmp(p1.x) == 0) && (p.y.Cmp(p1.y) == 0)
+}
+
+
+// Return sum of points
+func (p *EcPoint) Add(p1 *EcPoint, p2 *EcPoint) *EcPoint {
+  x, y := elliptic.P256().Add(p1.x, p1.y, p2.x, p2.y)
+
+  p.x = x
+  p.y = y
+
+  return p
+}
+
+
+// Return scalar multiplication
+func (p *EcPoint) Mult(scalar *big.Int, pt *EcPoint) *EcPoint {
+  x, y := elliptic.P256().ScalarMult(pt.x, pt.y, scalar.Bytes())
+
+  if scalar.Cmp(big.NewInt(0)) < 0 {
+    y.Neg(y)
   }
+
+  p.x = x
+  p.y = y
+
+  return p
+}
+
+
+// Given scalar s, return s * g
+func (p *EcPoint) BaseMult(scalar *big.Int) *EcPoint {
+  x, y := elliptic.P256().ScalarBaseMult(scalar.Bytes())
+
+  p.x = x
+  p.y = y
+
+  return p
 }
