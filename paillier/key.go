@@ -1,26 +1,27 @@
 package paillier
 
 import (
-  "crypto/sha256"
   "threshold/p256"
   "math/big"
   "fmt"
 )
 
 
+// Paillier key (N, phi(N)) with precomputed quantities for calculations
 type Key struct {
-  N           *big.Int      // N
-  NTo2        *big.Int      // N ^ 2
-  Gamma       *big.Int      // 1 + N
-  totient     *big.Int      // phi(N)
-  totientInv  *big.Int      // phi(N) ^ -1 (mod N)
+  N           *big.Int  // N
+  NTo2        *big.Int  // N ^ 2
+  Gamma       *big.Int  // 1 + N
+  totient     *big.Int  // phi(N)
+  totientInv  *big.Int  // phi(N) ^ -1 (mod N)
 }
 
 
+// Public part of Paillier key
 type PublicKey struct {
-  N     *big.Int            // N
-  NTo2  *big.Int            // N ^ 2
-  Gamma *big.Int            // 1 + N
+  N     *big.Int
+  NTo2  *big.Int
+  Gamma *big.Int
 }
 
 
@@ -28,13 +29,13 @@ type PublicKey struct {
 func GenerateKey(P *big.Int, Q *big.Int) *Key {
   one := big.NewInt(1)
 
-  N := new(big.Int).Mul(P, Q)                         // N = PQ
-  NTo2 := new(big.Int).Exp(N, big.NewInt(2), nil)     // N ^ 2
-  Gamma := new(big.Int).Add(N, one)                   // 1 + N
-  pMinusOne := new(big.Int).Sub(P, one)               // P - 1
-  qMinusOne := new(big.Int).Sub(Q, one)               // Q - 1
-  totient := new(big.Int).Mul(pMinusOne, qMinusOne)   // phi(N) = (P - 1)(Q - 1)
-  totientInv := new(big.Int).ModInverse(totient, N)   // phi(N) ^ -1 (mod N)
+  N := new(big.Int).Mul(P, Q) // N = PQ
+  NTo2 := new(big.Int).Exp(N, big.NewInt(2), nil) // N ^ 2
+  Gamma := new(big.Int).Add(N, one) // 1 + N
+  pMinusOne := new(big.Int).Sub(P, one) // P - 1
+  qMinusOne := new(big.Int).Sub(Q, one) // Q - 1
+  totient := new(big.Int).Mul(pMinusOne, qMinusOne) // phi(N) = (P - 1)(Q - 1)
+  totientInv := new(big.Int).ModInverse(totient, N) // phi(N) ^ -1 (mod N)
 
   return &Key {
     N:          N,
@@ -46,6 +47,7 @@ func GenerateKey(P *big.Int, Q *big.Int) *Key {
 }
 
 
+// Returns the public part of the present Paillier key
 func (key *Key) Public() *PublicKey {
   return &PublicKey {
     N:      key.N,
@@ -99,99 +101,22 @@ func (key *Key) Decrypt(cipher *big.Int) *big.Int {
 }
 
 
+// Encrypt the value of the provided elliptic key and return ZP proof along
+// with cipher
 func (public *PublicKey) EncryptEcKey(x *p256.EcKey) (*big.Int, *ZKProof) {
 
-  // Encrypt and store randomness for proof generation
   cipher, r := public.encryptWithRand(x.Value())
-
-  // Generate proof context
-  ctx := generateZKContext()
-  NTilde := ctx.NTilde
-  h1 := ctx.h1
-  h2 := ctx.h2
-
-  // Align with paper notation
-  y := x.Public()
-  eta := x.Value()
-  w := cipher
-
-  // Adapt proof ctx with respect to q
-  q := p256.Order()
-  qNTilde := new(big.Int).Mul(q, NTilde) // q * N~
-  qTo3 := new(big.Int).Exp(q, big.NewInt(3), nil) // q ^ 3
-  qTo3NTilde := new(big.Int).Mul(qTo3, NTilde) // q ^ 3 * N~
-
-  // Generate random parameters
-  one := big.NewInt(1)
-  alpha := randInRange(one, qTo3)
-  beta := randInRange(one, public.N)  // TODO: Justify
-  rho := randInRange(one, qNTilde)
-  gamma := randInRange(one, qTo3NTilde)
-
-  // z = h1 ^ eta * h2 ^ rho (mod N~)
-  z := new(big.Int).Exp(h1, eta, NTilde)
-  z.Mul(z, new(big.Int).Exp(h2, rho, NTilde)).Mod(z, NTilde)
-
-  // u1 = a * g
-  u1 := p256.Zero().BaseMult(alpha)
-
-  // u2 = Gamma ^ a * beta * N (mod N ^ 2)
-  u2 := new(big.Int).Exp(public.Gamma, alpha, public.NTo2)
-  u2.Mul(u2, new(big.Int).Exp(beta, public.N, public.NTo2)).Mod(u2, public.NTo2)
-
-  // u3 = h1 ^ a * h2 * gamma (mod N~)
-  u3 := new(big.Int).Exp(h1, alpha, NTilde)
-  u3.Mul(u3, new(big.Int).Exp(h2, gamma, NTilde)).Mod(u3, NTilde)
-
-  // e = Hash(g, y, w, z, u1, u2, u3)
-  hasher := sha256.New()
-  gx, gy := p256.Generator().ToBytes()
-  hasher.Write(gx)
-  hasher.Write(gy)
-  yx, yy := y.ToBytes()
-  hasher.Write(yx)
-  hasher.Write(yy)
-  hasher.Write(w.Bytes())
-  hasher.Write(z.Bytes())
-  u1x, u1y := u1.ToBytes()
-  hasher.Write(u1x)
-  hasher.Write(u1y)
-  hasher.Write(u2.Bytes())
-  hasher.Write(u3.Bytes())
-  e := new(big.Int).SetBytes(hasher.Sum(nil))
-
-  // s1 = e * eta + alpha
-  s1 := new(big.Int).Mul(e, eta)
-  s1.Add(s1, alpha)
-
-  // s2 = r ^ e * beta (mod N)
-  s2 := new(big.Int).Exp(r, e, public.N)
-  s2.Mul(s2, beta).Mod(s2, public.N)
-
-  // s3 = e * rho + gamma
-  s3 := new(big.Int).Mul(e, rho)
-  s3.Add(s3, gamma)
-
-  proof := &ZKProof{
-    ctx:  ctx,
-    y:    y,
-    z:    z,
-    u1:   u1,
-    u2:   u2,
-    u3:   u3,
-    e:    e,
-    s1:   s1,
-    s2:   s2,
-    s3:   s3,
-  }
+  proof := GenerateZKProof(x, cipher, r, public)
 
   return cipher, proof
 }
 
 
+// Verify that the provided cipher is the encryption of known elliptic key and
+// retrieve it by decrypting the cipher
 func (key *Key) DecryptEcKey(cipher *big.Int, proof *ZKProof) (*big.Int, error) {
 
-  _, err := proof.Verify(cipher, key.Public())
+  _, err := proof.Verify(cipher, key)
 
   if err != nil {
     err := fmt.Errorf("Decryption aborted: Proof failed to verify")
@@ -199,6 +124,5 @@ func (key *Key) DecryptEcKey(cipher *big.Int, proof *ZKProof) (*big.Int, error) 
   }
 
   result := key.Decrypt(cipher)
-
   return result, nil
 }
