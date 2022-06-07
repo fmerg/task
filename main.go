@@ -28,25 +28,6 @@ func getPrimes256() (*big.Int, *big.Int) {
   return P, Q
 }
 
-
-func demoEcdsa() {
-  key := p256.GenerateKey()
-  public := key.Public()
-
-  message := "to-be-signed"
-  var verified bool
-
-  // low level version
-  r, s := key.Sign(message)
-  verified = p256.VerifySignature(message, r, s, public)
-  fmt.Println(verified)
-
-  // ASN.1 version
-  signature := key.SignASN1(message)
-  verified = p256.VerifySignatureASN1(message, signature, public)
-  fmt.Println(verified)
-}
-
 func demoPaillier() {
   bitLength := 8 * 256
   PBitLength := (bitLength + 1) / 2
