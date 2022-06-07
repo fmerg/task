@@ -11,6 +11,12 @@ import (
 
 // Fixed primes with bitlength>=256 for testing
 func getPrimes256() (*big.Int, *big.Int) {
+  // // TODO: Explain idea with reference to paper
+  // bitLength := 8 * p256.BitSize()
+  // PBitLength := (bitLength + 1) / 2
+  // QBitLength := bitLength - PBitLength
+  // P, _ := paillier.GenerateSafePrimes(PBitLength)
+  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
   P, _ := new(big.Int).SetString(
     "17163161634662520191235013397610303324426988881329810102377024009423" +
     "35880140905321768768932843664364194840613742108650920446524799098111" +
@@ -28,37 +34,39 @@ func getPrimes256() (*big.Int, *big.Int) {
 }
 
 
-func demoEncDec() {
-  // // TODO: Explain idea with reference to paper
-  // bitLength := 8 * p256.BitSize()
-  // PBitLength := (bitLength + 1) / 2
-  // QBitLength := bitLength - PBitLength
-  // P, _ := paillier.GenerateSafePrimes(PBitLength)
-  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+func DemoEncryption() {
+  // Generate Paillier key
   P, Q := getPrimes256()
   key := paillier.GenerateKey(P, Q)
   public := key.Public()
+
+  // Encrypt message
   message := big.NewInt(987654321)
   fmt.Println("message:", message)
   cipher := public.Encrypt(message)
+
+  // Decrypt message
   result := key.Decrypt(cipher)
   fmt.Println("result:", result)
 }
 
 
-func EncDecEcKey() {
+func DemoKeyEncryption() {
+  // Generate sender's elliptic curve key
   x := p256.GenerateKey()
-  // // TODO: Explain idea with reference to paper
-  // bitLength := 8 * p256.BitSize()
-  // PBitLength := (bitLength + 1) / 2
-  // QBitLength := bitLength - PBitLength
-  // P, _ := paillier.GenerateSafePrimes(PBitLength)
-  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+
+  // Generate receiver's Paillier key
   P, Q := getPrimes256()
   key := paillier.GenerateKey(P, Q)
   public := key.Public()
+
+  // Sender encrypts their elliptic key under the receiver's Paillier public
+  // providing also a ZK proof
   fmt.Println("message:", x.Value())
   cipher, proof := public.EncryptEcKey(x)
+
+  // Receiver verfies the proof and retrieves the sender's elliptic key by
+  // decrypting
   result, err := key.DecryptEcKey(cipher, proof)
   if err != nil {
     log.Fatal(err)
@@ -68,6 +76,8 @@ func EncDecEcKey() {
 
 
 func main() {
-  demoEncDec()
-  EncDecEcKey()
+  fmt.Println("")
+  DemoEncryption()
+  fmt.Println("")
+  DemoKeyEncryption()
 }
