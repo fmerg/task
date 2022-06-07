@@ -4,6 +4,7 @@ import (
   "testing"
   "github.com/stretchr/testify/assert"
   "math/big"
+  "threshold/p256"
 )
 
 
@@ -36,4 +37,23 @@ func TestEncryptDecrypt(t *testing.T) {
   cipher := public.Encrypt(message)
   result := key.Decrypt(cipher)
   assert.Equal(t, message, result, "Decrypted ciphertext is not original message")
+}
+
+
+func TestEncryptDecryptWithProof(t *testing.T) {
+  x := p256.GenerateKey()
+  y := x.Public()
+
+  // P, _ := paillier.GenerateSafePrimes(PBitLength)
+  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+  P, Q := getPrimes256()
+  key := GenerateKey(P, Q)
+  public := key.Public()
+
+  message := x.Value()
+  cipher := public.Encrypt(message)
+  cipher, proof := public.EncryptWithProof(message, y)
+  result, err := proof.Verify(y, cipher, public)
+  assert.Equal(t, err, nil, "Proof should have verified")
+  assert.True(t, result, "Proof should have verified")
 }

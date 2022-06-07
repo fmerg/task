@@ -37,7 +37,6 @@ func demoEncDec() {
   // QBitLength := bitLength - PBitLength
   // // P, _ := paillier.GenerateSafePrimes(PBitLength)
   // // Q, _ := paillier.GenerateSafePrimes(QBitLength)
-
   P, Q := getPrimes256()
   key := paillier.GenerateKey(P, Q)
   public := key.Public()
@@ -60,7 +59,6 @@ func demoEncDecWithProof() {
   // QBitLength := bitLength - PBitLength
   // // P, _ := paillier.GenerateSafePrimes(PBitLength)
   // // Q, _ := paillier.GenerateSafePrimes(QBitLength)
-
   P, Q := getPrimes256()
   key := paillier.GenerateKey(P, Q)
   public := key.Public()
