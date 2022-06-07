@@ -4,7 +4,6 @@ import (
   "crypto/sha256"
   "threshold/p256"
   "math/big"
-  // "fmt"
 )
 
 
@@ -59,7 +58,9 @@ func (key *Key) Public() *PublicKey {
 }
 
 
-func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
+// Encrypts the provided message while also returning the randomness used for
+// encryption. This is intended for internal usage only.
+func (public *PublicKey) encryptWithRand(message *big.Int) (*big.Int, *big.Int) {
   r := randInt(public.N)
 
   // r ^ N (mod N ^ 2)
@@ -72,9 +73,20 @@ func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
   cipher := new(big.Int).Mul(GammaToM, rToN)
   cipher = cipher.Mod(cipher, public.NTo2)
 
+  return cipher, r
+}
+
+
+// Standard encryption with respect to the present Paillier public key
+func (public *PublicKey) Encrypt(message *big.Int) *big.Int {
+
+  cipher, _ := public.encryptWithRand(message)
+
   return cipher
 }
 
+
+// Standard decryption with respect to the present Paillier key
 func (key *Key) Decrypt(cipher *big.Int) *big.Int {
 
   // m^ = (c ^ phi(N) (mod N ^ 2) - 1) / N
@@ -85,23 +97,14 @@ func (key *Key) Decrypt(cipher *big.Int) *big.Int {
   // m^ * (phi(N) ^ -1 (mod N)) (mod N)
   res := new(big.Int).Mul(m_hat, key.totientInv)
   res = res.Mod(res, key.N)
+
   return res
 }
 
 
 func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*big.Int, *ZKProof) {
-  // TODO: Do not replicate encryption
-  r := randInt(public.N)
 
-  // r ^ N (mod N ^ 2)
-  rToN := new(big.Int).Exp(r, public.N, public.NTo2)
-
-  // (1 + N) ^ m (mod N ^ 2)
-  GammaToM := new(big.Int).Exp(public.Gamma, message, public.NTo2)
-
-  // (1 + N) ^ m * r ^ N (mod N ^ 2)
-  cipher := new(big.Int).Mul(GammaToM, rToN)
-  cipher = cipher.Mod(cipher, public.NTo2)
+  cipher, r := public.encryptWithRand(message)
 
   // Generate proof context
   ctx := generateZKContext()
