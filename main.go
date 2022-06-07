@@ -29,19 +29,16 @@ func getPrimes256() (*big.Int, *big.Int) {
 
 
 func demoEncDec() {
-  x := p256.GenerateKey()
-
   // // TODO: Explain idea with reference to paper
   // bitLength := 8 * p256.BitSize()
   // PBitLength := (bitLength + 1) / 2
   // QBitLength := bitLength - PBitLength
-  // // P, _ := paillier.GenerateSafePrimes(PBitLength)
-  // // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+  // P, _ := paillier.GenerateSafePrimes(PBitLength)
+  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
   P, Q := getPrimes256()
   key := paillier.GenerateKey(P, Q)
   public := key.Public()
-
-  message := x.Value()
+  message := big.NewInt(987654321)
   fmt.Println("message:", message)
   cipher := public.Encrypt(message)
   result := key.Decrypt(cipher)
@@ -49,33 +46,29 @@ func demoEncDec() {
 }
 
 
-func demoEncDecWithProof() {
+func EncDecEcKey() {
   x := p256.GenerateKey()
   y := x.Public()
-
   // // TODO: Explain idea with reference to paper
   // bitLength := 8 * p256.BitSize()
   // PBitLength := (bitLength + 1) / 2
   // QBitLength := bitLength - PBitLength
-  // // P, _ := paillier.GenerateSafePrimes(PBitLength)
-  // // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+  // P, _ := paillier.GenerateSafePrimes(PBitLength)
+  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
   P, Q := getPrimes256()
   key := paillier.GenerateKey(P, Q)
   public := key.Public()
-
-  message := x.Value()
-  fmt.Println("message:", message)
-  cipher, proof := public.EncryptWithProof(message, y)
-  _, err := proof.Verify(y, cipher, public)
+  fmt.Println("message:", x.Value())
+  cipher, proof := public.EncryptEcKey(x)
+  result, err := key.DecryptEcKey(y, cipher, proof)
   if err != nil {
     log.Fatal(err)
   }
-  result := key.Decrypt(cipher)
   fmt.Println("result:", result)
 }
 
 
 func main() {
   demoEncDec()
-  demoEncDecWithProof()
+  EncDecEcKey()
 }

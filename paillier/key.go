@@ -4,6 +4,7 @@ import (
   "crypto/sha256"
   "threshold/p256"
   "math/big"
+  "fmt"
 )
 
 
@@ -98,9 +99,10 @@ func (key *Key) Decrypt(cipher *big.Int) *big.Int {
 }
 
 
-func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*big.Int, *ZKProof) {
+func (public *PublicKey) EncryptEcKey(x *p256.EcKey) (*big.Int, *ZKProof) {
 
-  cipher, r := public.encryptWithRand(message)
+  // Encrypt and store randomness for proof generation
+  cipher, r := public.encryptWithRand(x.Value())
 
   // Generate proof context
   ctx := generateZKContext()
@@ -108,8 +110,8 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   h1 := ctx.h1
   h2 := ctx.h2
 
-  // Align encryption I/O with paper notation
-  eta := message
+  // Align with paper notation
+  eta := x.Value()
   w := cipher
 
   // Adapt proof ctx with respect to q
@@ -145,6 +147,7 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   gx, gy := p256.Generator().ToBytes()
   hasher.Write(gx)
   hasher.Write(gy)
+  y := x.Public()
   yx, yy := y.ToBytes()
   hasher.Write(yx)
   hasher.Write(yy)
@@ -182,4 +185,19 @@ func (public *PublicKey) EncryptWithProof(message *big.Int, y *p256.EcPublic) (*
   }
 
   return cipher, proof
+}
+
+
+func (key *Key) DecryptEcKey(y *p256.EcPublic, cipher *big.Int, proof *ZKProof) (*big.Int, error) {
+
+  _, err := proof.Verify(y, cipher, key.Public())
+
+  if err != nil {
+    err := fmt.Errorf("Decryption aborted: Proof failed to verify")
+    return nil, err
+  }
+
+  result := key.Decrypt(cipher)
+
+  return result, nil
 }
