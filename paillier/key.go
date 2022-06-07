@@ -8,9 +8,7 @@ import (
 
 
 type Key struct {
-  P           *big.Int      // P
-  Q           *big.Int      // Q
-  N           *big.Int      // N, should be PQ
+  N           *big.Int      // N
   NTo2        *big.Int      // N ^ 2
   Gamma       *big.Int      // 1 + N
   totient     *big.Int      // phi(N)
@@ -25,8 +23,8 @@ type PublicKey struct {
 }
 
 
+// Paillier key generation with N = PQ
 func GenerateKey(P *big.Int, Q *big.Int) *Key {
-
   one := big.NewInt(1)
 
   N := new(big.Int).Mul(P, Q)                         // N = PQ
@@ -38,8 +36,6 @@ func GenerateKey(P *big.Int, Q *big.Int) *Key {
   totientInv := new(big.Int).ModInverse(totient, N)   // phi(N) ^ -1 (mod N)
 
   return &Key {
-    P:          P,
-    Q:          Q,
     N:          N,
     NTo2:       NTo2,
     Gamma:      Gamma,
