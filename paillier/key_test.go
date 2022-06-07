@@ -7,10 +7,8 @@ import (
 )
 
 
-func TestEncryptDecrypt(t *testing.T) {
-
-  // Chosen so that N = PQ > ord(P-256) ** 8 (i.e., equivalently,
-  // bitlen(N) >= 8 * 256
+// Fixed primes with bitlength>=256 for testing
+func getPrimes256() (*big.Int, *big.Int) {
   P, _ := new(big.Int).SetString(
     "17163161634662520191235013397610303324426988881329810102377024009423" +
     "35880140905321768768932843664364194840613742108650920446524799098111" +
@@ -24,13 +22,18 @@ func TestEncryptDecrypt(t *testing.T) {
     "29223536758794080599444958718778758463265731608001059144097229148919" +
     "0583394816326909520228507712914572539", 10)
 
-  secret := GenerateKey(P, Q)
-  public := secret.Public()
+  return P, Q
+}
 
+
+func TestEncryptDecrypt(t *testing.T) {
+  // P, _ := paillier.GenerateSafePrimes(PBitLength)
+  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+  P, Q := getPrimes256()
+  key := GenerateKey(P, Q)
+  public := key.Public()
   message := big.NewInt(9876543210)
-
   cipher := public.Encrypt(message)
-  result := secret.Decrypt(cipher)
-
+  result := key.Decrypt(cipher)
   assert.Equal(t, message, result, "Decrypted ciphertext is not original message")
 }

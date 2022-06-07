@@ -9,9 +9,8 @@ import (
 )
 
 
+// Fixed primes with bitlength>=256 for testing
 func getPrimes256() (*big.Int, *big.Int) {
-
-  // Fixed primes with bitlength>=256 for testing
   P, _ := new(big.Int).SetString(
     "17163161634662520191235013397610303324426988881329810102377024009423" +
     "35880140905321768768932843664364194840613742108650920446524799098111" +
@@ -28,95 +27,57 @@ func getPrimes256() (*big.Int, *big.Int) {
   return P, Q
 }
 
-func demoPaillier() {
-  bitLength := 8 * 256
-  PBitLength := (bitLength + 1) / 2
-  QBitLength := bitLength - PBitLength
 
-  fmt.Println(PBitLength)
-  fmt.Println(QBitLength)
+func demoEncDec() {
+  x := p256.GenerateKey()
 
-  // P, _ := paillier.GenerateSafePrimes(PBitLength)
-  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+  // // TODO: Explain idea with reference to paper
+  // bitLength := 8 * p256.BitSize()
+  // PBitLength := (bitLength + 1) / 2
+  // QBitLength := bitLength - PBitLength
+  // // P, _ := paillier.GenerateSafePrimes(PBitLength)
+  // // Q, _ := paillier.GenerateSafePrimes(QBitLength)
+
   P, Q := getPrimes256()
+  key := paillier.GenerateKey(P, Q)
+  public := key.Public()
 
-  secret := paillier.GenerateKey(P, Q)
-  public := secret.Public()
-
-  message := big.NewInt(9876543210)
+  message := x.Value()
   fmt.Println("message:", message)
-
   cipher := public.Encrypt(message)
-  result := secret.Decrypt(cipher)
-
+  result := key.Decrypt(cipher)
   fmt.Println("result:", result)
 }
 
 
-func demoPaillierFromCurve() {
-  key := p256.GenerateKey()
+func demoEncDecWithProof() {
+  x := p256.GenerateKey()
+  y := x.Public()
 
-  // TODO: Explain idea with reference to paper
-  bitLength := 8 * p256.BitSize()
-  PBitLength := (bitLength + 1) / 2
-  QBitLength := bitLength - PBitLength
-
-  // P, _ := paillier.GenerateSafePrimes(PBitLength)
-  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
-  fmt.Println(QBitLength)
-  fmt.Println(PBitLength)
+  // // TODO: Explain idea with reference to paper
+  // bitLength := 8 * p256.BitSize()
+  // PBitLength := (bitLength + 1) / 2
+  // QBitLength := bitLength - PBitLength
+  // // P, _ := paillier.GenerateSafePrimes(PBitLength)
+  // // Q, _ := paillier.GenerateSafePrimes(QBitLength)
 
   P, Q := getPrimes256()
+  key := paillier.GenerateKey(P, Q)
+  public := key.Public()
 
-  secret := paillier.GenerateKey(P, Q)
-  public := secret.Public()
-
-  message := key.Value()
+  message := x.Value()
   fmt.Println("message:", message)
-
-  cipher := public.Encrypt(message)
-  result := secret.Decrypt(cipher)
-
-  fmt.Println("result:", result)
-}
-
-
-func demoPaillierWithProof() {
-  key := p256.GenerateKey()
-
-  // TODO: Explain idea with reference to paper
-  bitLength := 8 * p256.BitSize()
-  PBitLength := (bitLength + 1) / 2
-  QBitLength := bitLength - PBitLength
-
-  fmt.Println(QBitLength)
-  fmt.Println(PBitLength)
-
-  // P, _ := paillier.GenerateSafePrimes(PBitLength)
-  // Q, _ := paillier.GenerateSafePrimes(QBitLength)
-  P, Q := getPrimes256()
-
-  secret := paillier.GenerateKey(P, Q)
-  public := secret.Public()
-
-  message := key.Value()
-  fmt.Println("message:", message)
-
-  y := key.Public()
   cipher, proof := public.EncryptWithProof(message, y)
   _, err := proof.Verify(y, cipher, public)
   if err != nil {
-    log.Fatal(err)  // TODO: Handle
+    log.Fatal(err)
   }
-
-  result := secret.Decrypt(cipher)
+  result := key.Decrypt(cipher)
   fmt.Println("result:", result)
 }
 
 
 func main() {
-  // demoEcdsa()
-  demoPaillier()
-  demoPaillierFromCurve()
-  demoPaillierWithProof()
+  demoEncDec()
+  demoEncDecWithProof()
 }
